@@ -3,7 +3,7 @@
  *
  * Setup:
  * 1. Create a Google Sheet. Add a sheet (tab) named "Climbs" with this header row in row 1:
- *    Timestamp | Date | Discipline | Grade | GradeValue | Status | Attempts | Location | Notes
+ *    Timestamp | Date | Grade | GradeValue | Status | Climber
  * 2. In the Sheet, go to Extensions > Apps Script.
  * 3. Delete any starter code and paste this whole file in.
  * 4. (Optional) Set SECRET below to any string, then enter the same string in the app's Settings tab.
@@ -14,7 +14,7 @@
  * 6. Copy the deployment URL (ends in /exec) into the app's Settings tab.
  */
 
-const SHEET_NAME = 'Climbs';
+const SHEET_NAME = 'log';
 const SECRET = ''; // optional shared secret, leave blank to disable the check
 
 function getSheet_() {
@@ -22,7 +22,7 @@ function getSheet_() {
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(['Timestamp','Date','Discipline','Grade','GradeValue','Status','Attempts','Location','Notes']);
+    sheet.appendRow(['Timestamp','Date','Grade','GradeValue','Status','Climber']);
   }
   return sheet;
 }
@@ -58,13 +58,10 @@ function doPost(e) {
     sheet.appendRow([
       new Date(),
       body.date || '',
-      body.discipline || '',
       body.grade || '',
       body.gradeValue !== undefined ? body.gradeValue : '',
       body.status || '',
-      body.attempts || '',
-      body.location || '',
-      body.notes || ''
+      body.climber || ''
     ]);
     return jsonOut_({ ok: true });
   } catch (err) {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beta Log — Climb Training Tracker</title>
+<title>Beta Log — Sport Climbing Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
@@ -107,10 +107,9 @@
     background:var(--stone-950); color:var(--chalk-500); font-weight:700; font-size:12.5px;
     cursor:pointer; text-transform:uppercase; letter-spacing:0.04em;
   }
-  .status-toggle button.selected[data-status="Send"]{background:var(--tape-green); color:var(--stone-950); border-color:var(--tape-green);}
-  .status-toggle button.selected[data-status="Flash"]{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
-  .status-toggle button.selected[data-status="Project"]{background:var(--tape-orange); color:var(--stone-950); border-color:var(--tape-orange);}
   .status-toggle button.selected[data-status="Attempt"]{background:var(--tape-red); color:var(--stone-950); border-color:var(--tape-red);}
+  .status-toggle button.selected[data-status="Send"]{background:var(--tape-green); color:var(--stone-950); border-color:var(--tape-green);}
+  .status-toggle button.selected[data-status="Redpoint"]{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
 
   .btn-primary{
     background:var(--tape-flash); color:var(--stone-950); border:none; padding:12px 20px;
@@ -136,6 +135,35 @@
   .settings-note{font-size:12.5px; color:var(--chalk-500); line-height:1.6;}
   .settings-note code{background:var(--stone-950); padding:2px 6px; border-radius:4px; color:var(--tape-flash);}
 
+  /* Lock screen */
+  #lock-screen{
+    position:fixed; inset:0; z-index:100; background:var(--stone-950);
+    display:flex; align-items:center; justify-content:center;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(200,255,77,0.06), transparent 40%),
+      radial-gradient(circle at 90% 85%, rgba(255,75,62,0.06), transparent 40%);
+  }
+  #lock-screen.hidden{display:none;}
+  .lock-card{width:100%; max-width:340px; padding:0 20px; text-align:center;}
+  .lock-card .brand-mark{width:32px; height:32px; margin-bottom:14px;}
+  .lock-card h1{font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:0.04em; margin:0 0 6px;}
+  .lock-card p{color:var(--chalk-500); font-size:13.5px; margin:0 0 22px;}
+  .lock-card input{
+    width:100%; background:var(--stone-900); border:1px solid var(--stone-700); color:var(--chalk-100);
+    padding:12px 14px; border-radius:var(--radius-s); font-family:'JetBrains Mono',monospace; font-size:15px;
+    text-align:center; letter-spacing:0.1em; margin-bottom:12px;
+  }
+  .lock-card input:focus{outline:2px solid var(--tape-flash); outline-offset:1px;}
+  .lock-card .btn-primary{width:100%;}
+  #lock-error{color:var(--tape-red); font-size:12.5px; min-height:18px; margin-top:12px;}
+  .lock-shake{animation:shake .3s ease;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+  #app-shell.hidden{display:none;}
+
   canvas{max-width:100%;}
 
   @media (max-width:720px){
@@ -147,6 +175,22 @@
 </head>
 <body>
 
+<div id="lock-screen">
+  <div class="lock-card">
+    <svg class="brand-mark" viewBox="0 0 24 24" fill="none" style="margin:0 auto 14px; display:block;">
+      <path d="M2 18L8 8L12 14L16 6L22 18" stroke="#C8FF4D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1>BETA<span style="color:var(--tape-flash);">LOG</span></h1>
+    <p>Enter your passphrase to unlock the log.</p>
+    <form id="lock-form">
+      <input type="password" id="lock-input" placeholder="passphrase" autocomplete="off" autofocus>
+      <button type="submit" class="btn-primary">Unlock</button>
+      <div id="lock-error"></div>
+    </form>
+  </div>
+</div>
+
+<div id="app-shell" class="hidden">
 <header class="app-header">
   <div class="brand">
     <svg class="brand-mark" viewBox="0 0 24 24" fill="none">
@@ -191,10 +235,6 @@
     <div class="panel">
       <h2>Grade Pyramid</h2>
       <p class="panel-sub">Every send, stacked by grade — the classic way to see where your base is thin.</p>
-      <div style="display:flex; gap:8px; margin-bottom:14px;">
-        <button class="btn-ghost" id="pyramid-boulder" style="padding:6px 14px; font-size:12px;">Boulder (V)</button>
-        <button class="btn-ghost" id="pyramid-route" style="padding:6px 14px; font-size:12px;">Route (YDS)</button>
-      </div>
       <div class="pyramid-wrap" id="pyramid-container"></div>
     </div>
 
@@ -208,7 +248,7 @@
       <h2>Recent Sessions</h2>
       <p class="panel-sub">Last 10 entries from your log.</p>
       <table class="log-table">
-        <thead><tr><th>Date</th><th>Discipline</th><th>Grade</th><th>Status</th><th>Location</th></tr></thead>
+        <thead><tr><th>Date</th><th>Grade</th><th>Status</th><th>Climber</th></tr></thead>
         <tbody id="recent-table-body"></tbody>
       </table>
     </div>
@@ -226,37 +266,23 @@
           <input type="date" id="f-date" required>
         </div>
         <div class="field">
-          <label for="f-discipline">Discipline</label>
-          <select id="f-discipline">
-            <option value="Boulder">Boulder</option>
-            <option value="Sport">Sport</option>
-            <option value="Top Rope">Top Rope</option>
-          </select>
-        </div>
-        <div class="field">
           <label for="f-grade">Grade</label>
           <select id="f-grade"></select>
         </div>
         <div class="field">
-          <label for="f-attempts">Attempts</label>
-          <input type="number" id="f-attempts" min="1" value="1">
+          <label for="f-climber">Climber</label>
+          <select id="f-climber">
+            <option value="Parker">Parker</option>
+            <option value="Finn">Finn</option>
+          </select>
         </div>
         <div class="field full">
           <label>Status</label>
           <div class="status-toggle" id="status-toggle">
-            <button type="button" data-status="Flash">Flash</button>
-            <button type="button" data-status="Send" class="selected">Send</button>
-            <button type="button" data-status="Project">Project</button>
             <button type="button" data-status="Attempt">Attempt</button>
+            <button type="button" data-status="Send" class="selected">Send</button>
+            <button type="button" data-status="Redpoint">Redpoint</button>
           </div>
-        </div>
-        <div class="field">
-          <label for="f-location">Gym / Crag</label>
-          <input type="text" id="f-location" placeholder="e.g. Movement Plano">
-        </div>
-        <div class="field">
-          <label for="f-notes">Notes</label>
-          <input type="text" id="f-notes" placeholder="beta, conditions, how it felt...">
         </div>
         <div class="full">
           <button type="submit" class="btn-primary">Save Climb</button>
@@ -269,7 +295,7 @@
   <!-- GOALS -->
   <section class="view" id="view-goals">
     <h1 class="page-title">Goals</h1>
-    <p class="page-sub">Set a target grade and watch your pyramid climb toward it.</p>
+    <p class="page-sub">Set a target lead grade and watch your pyramid climb toward it.</p>
 
     <div class="panel" id="goals-container">
       <!-- goal cards injected here -->
@@ -278,14 +304,6 @@
     <div class="panel">
       <h2>Set a New Goal</h2>
       <div class="goal-form">
-        <div class="field">
-          <label for="g-discipline">Discipline</label>
-          <select id="g-discipline">
-            <option value="Boulder">Boulder</option>
-            <option value="Sport">Sport</option>
-            <option value="Top Rope">Top Rope</option>
-          </select>
-        </div>
         <div class="field">
           <label for="g-grade">Target Grade</label>
           <select id="g-grade"></select>
@@ -301,50 +319,49 @@
     <p class="page-sub">Connect this app to your Google Sheet.</p>
 
     <div class="panel">
-      <h2>Apps Script Web App URL</h2>
-      <p class="panel-sub">Paste the deployment URL from your Google Apps Script (see README for setup).</p>
-      <div class="field" style="margin-bottom:12px;">
-        <input type="text" id="s-endpoint" placeholder="https://script.google.com/macros/s/.../exec">
-      </div>
+      <h2>Shared Secret</h2>
+      <p class="panel-sub">Must match the secret configured in the Apps Script (see README). The sheet connection itself is already built in.</p>
       <div class="field" style="margin-bottom:16px;">
         <label for="s-secret">Shared secret (optional, must match the script)</label>
         <input type="text" id="s-secret" placeholder="leave blank if none">
       </div>
-      <button class="btn-primary" id="save-settings-btn">Save & Sync</button>
+      <button class="btn-primary" id="save-settings-btn">Save</button>
       <span id="settings-feedback" style="margin-left:12px; font-size:13px; color:var(--tape-flash);"></span>
       <p class="settings-note" style="margin-top:16px;">
-        Without a connected sheet, Beta Log stores climbs in your browser (<code>localStorage</code>) so you can try it out.
-        Once you add an endpoint, new climbs are sent to your sheet and the dashboard reads from it.
+        If the sheet connection isn't set up yet, Beta Log stores climbs in your browser (<code>localStorage</code>) so you can try it out.
       </p>
     </div>
   </section>
 
 </main>
+</div>
 
 <script>
-/* ---------- Grade tables ---------- */
-const BOULDER_GRADES = Array.from({length:17}, (_,i)=>`V${i}`); // V0–V16
-const ROUTE_GRADES = (() => {
-  const base = [5.6,5.7,5.8,5.9];
+/* ---------- Config ---------- */
+// Replace with your deployed Apps Script Web App URL (ends in /exec).
+// Hardcoded so it's baked into the page instead of something users have to enter.
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwl912jffG5huMY6JWzau2NYUt-hf6LLzl8-ilO98FIeS7SnnYrOTa5cWyYyxcJ4Wttqg/exec';
+function isConfigured(){ return !!APPS_SCRIPT_URL && !APPS_SCRIPT_URL.startsWith('PASTE_'); }
+
+/* ---------- Grade table (Sport leading, YDS) ---------- */
+const GRADES = (() => {
+  const list = ['5.6','5.7','5.8','5.9'];
   const letters = ['a','b','c','d'];
-  const list = base.map(g => `5.${String(g).split('.')[1]}`);
-  for (let n=10;n<=15;n++){ letters.forEach(l => list.push(`5.${n}${l}`)); }
+  for (let n=10;n<=13;n++){ letters.forEach(l => list.push(`5.${n}${l}`)); }
   return list;
 })();
 
-function gradeList(discipline){ return discipline === 'Boulder' ? BOULDER_GRADES : ROUTE_GRADES; }
-function gradeIndex(discipline, grade){ return gradeList(discipline).indexOf(grade); }
-function gradeColor(discipline, grade){
-  const list = gradeList(discipline);
-  const idx = list.indexOf(grade);
-  const pct = idx / Math.max(list.length-1,1);
+function gradeIndex(grade){ return GRADES.indexOf(grade); }
+function gradeColor(grade){
+  const idx = GRADES.indexOf(grade);
+  const pct = idx / Math.max(GRADES.length-1,1);
   const stops = ['#6FCF97','#C8FF4D','#FFD166','#FF8C42','#FF4B3E'];
   const pos = Math.round(pct * (stops.length-1));
   return stops[Math.max(0, Math.min(stops.length-1, pos))];
 }
 
-function populateGradeSelect(sel, discipline){
-  sel.innerHTML = gradeList(discipline).map(g=>`<option value="${g}">${g}</option>`).join('');
+function populateGradeSelect(sel){
+  sel.innerHTML = GRADES.map(g=>`<option value="${g}">${g}</option>`).join('');
 }
 
 /* ---------- Storage layer (localStorage + optional Apps Script sync) ---------- */
@@ -363,32 +380,31 @@ const Store = {
   setGoals(g){ localStorage.setItem(this.goalsKey, JSON.stringify(g)); },
 
   async fetchAll(){
-    const { endpoint } = this.getSettings();
-    if (!endpoint) return this.getLocal();
+    if (!isConfigured()) return this.getLocal();
     try {
-      const res = await fetch(endpoint, { method:'GET' });
+      const res = await fetch(APPS_SCRIPT_URL, { method:'GET' });
       const json = await res.json();
       if (json.ok) return json.data.map(r => ({
-        date: r.date, discipline: r.discipline, grade: r.grade,
+        date: r.date, grade: r.grade,
         gradeValue: Number(r.gradeValue), status: r.status,
-        attempts: Number(r.attempts), location: r.location, notes: r.notes
+        climber: r.climber
       }));
     } catch(e){ console.warn('Sheet fetch failed, falling back to local.', e); }
     return this.getLocal();
   },
 
   async add(entry){
-    const { endpoint, secret } = this.getSettings();
+    const { secret } = this.getSettings();
     // always cache locally so the UI stays responsive / works offline
     const rows = this.getLocal();
     rows.push(entry);
     this.setLocal(rows);
 
-    if (!endpoint) return { ok:true, local:true };
+    if (!isConfigured()) return { ok:true, local:true };
     try {
       // NOTE: no explicit Content-Type header — this avoids a CORS preflight
       // that Apps Script's doPost doesn't handle. Body is still JSON text.
-      const res = await fetch(endpoint, {
+      const res = await fetch(APPS_SCRIPT_URL, {
         method:'POST',
         body: JSON.stringify({ ...entry, secret: secret || '' })
       });
@@ -414,10 +430,8 @@ document.querySelectorAll('nav.tabs button').forEach(btn => {
 });
 
 /* ---------- Log form ---------- */
-const disciplineSel = document.getElementById('f-discipline');
 const gradeSel = document.getElementById('f-grade');
-populateGradeSelect(gradeSel, disciplineSel.value);
-disciplineSel.addEventListener('change', () => populateGradeSelect(gradeSel, disciplineSel.value));
+populateGradeSelect(gradeSel);
 document.getElementById('f-date').valueAsDate = new Date();
 
 let selectedStatus = 'Send';
@@ -431,17 +445,13 @@ document.querySelectorAll('#status-toggle button').forEach(btn=>{
 
 document.getElementById('log-form').addEventListener('submit', async (e)=>{
   e.preventDefault();
-  const discipline = disciplineSel.value;
   const grade = gradeSel.value;
   const entry = {
     date: document.getElementById('f-date').value,
-    discipline,
     grade,
-    gradeValue: gradeIndex(discipline, grade),
+    gradeValue: gradeIndex(grade),
     status: selectedStatus,
-    attempts: Number(document.getElementById('f-attempts').value) || 1,
-    location: document.getElementById('f-location').value,
-    notes: document.getElementById('f-notes').value
+    climber: document.getElementById('f-climber').value
   };
   const feedback = document.getElementById('log-feedback');
   feedback.textContent = 'Saving...';
@@ -449,29 +459,20 @@ document.getElementById('log-form').addEventListener('submit', async (e)=>{
   feedback.textContent = result.ok
     ? (result.local ? 'Saved locally (no sheet connected).' : 'Saved to sheet ✓')
     : 'Saved locally — sheet sync failed, check Settings.';
-  document.getElementById('f-notes').value = '';
-  document.getElementById('f-attempts').value = 1;
 });
 
 /* ---------- Dashboard ---------- */
 let progressChart = null;
-let pyramidDiscipline = 'Boulder';
-
-document.getElementById('pyramid-boulder').addEventListener('click', ()=>{ pyramidDiscipline='Boulder'; renderDashboard(); });
-document.getElementById('pyramid-route').addEventListener('click', ()=>{ pyramidDiscipline='Route'; renderDashboard(); });
 
 async function renderDashboard(){
   const rows = await Store.fetchAll();
 
   document.getElementById('stat-total').textContent = rows.length;
-  const sends = rows.filter(r => r.status === 'Send' || r.status === 'Flash');
+  const sends = rows.filter(r => r.status === 'Send' || r.status === 'Redpoint');
   document.getElementById('stat-sends').textContent = sends.length;
   document.getElementById('stat-rate').textContent = rows.length ? Math.round(sends.length / rows.length * 100) + '%' : '0%';
 
-  const maxSend = sends.reduce((best, r) => {
-    const list = gradeList(r.discipline === 'Boulder' ? 'Boulder' : 'Route');
-    return (!best || r.gradeValue > best.gradeValue) ? r : best;
-  }, null);
+  const maxSend = sends.reduce((best, r) => (!best || r.gradeValue > best.gradeValue) ? r : best, null);
   document.getElementById('stat-max').textContent = maxSend ? maxSend.grade : '—';
 
   renderPyramid(rows);
@@ -480,27 +481,22 @@ async function renderDashboard(){
 }
 
 function renderPyramid(rows){
-  const disc = pyramidDiscipline === 'Boulder' ? 'Boulder' : ['Sport','Top Rope'];
-  const filtered = rows.filter(r => Array.isArray(disc) ? disc.includes(r.discipline) : r.discipline === disc)
-                       .filter(r => r.status === 'Send' || r.status === 'Flash');
-  document.getElementById('pyramid-boulder').style.borderColor = pyramidDiscipline==='Boulder' ? 'var(--tape-flash)' : 'var(--stone-700)';
-  document.getElementById('pyramid-route').style.borderColor = pyramidDiscipline==='Route' ? 'var(--tape-flash)' : 'var(--stone-700)';
+  const filtered = rows.filter(r => r.status === 'Send' || r.status === 'Redpoint');
 
   const container = document.getElementById('pyramid-container');
   if (!filtered.length){
-    container.innerHTML = '<div class="pyramid-empty">No sends logged yet for this discipline. Log a climb to start building your pyramid.</div>';
+    container.innerHTML = '<div class="pyramid-empty">No sends logged yet. Log a climb to start building your pyramid.</div>';
     return;
   }
   const counts = {};
   filtered.forEach(r => { counts[r.grade] = (counts[r.grade]||0) + 1; });
-  const disciplineKey = pyramidDiscipline === 'Boulder' ? 'Boulder' : 'Sport';
-  const gradesPresent = Object.keys(counts).sort((a,b)=> gradeIndex(disciplineKey,b) - gradeIndex(disciplineKey,a));
+  const gradesPresent = Object.keys(counts).sort((a,b)=> gradeIndex(b) - gradeIndex(a));
   const maxCount = Math.max(...Object.values(counts));
 
   container.innerHTML = gradesPresent.map(g => {
     const count = counts[g];
     const widthPct = Math.max((count / maxCount) * 100, 8);
-    const color = gradeColor(disciplineKey, g);
+    const color = gradeColor(g);
     return `<div class="pyramid-row">
       <div class="grade-label mono">${g}</div>
       <div class="bar-track"><div class="bar" style="width:${widthPct}%; background:${color};">${count}</div></div>
@@ -509,7 +505,7 @@ function renderPyramid(rows){
 }
 
 function renderProgressChart(rows){
-  const sends = rows.filter(r => (r.status === 'Send' || r.status === 'Flash') && r.date);
+  const sends = rows.filter(r => (r.status === 'Send' || r.status === 'Redpoint') && r.date);
   const byWeek = {};
   sends.forEach(r => {
     if (!r.date) return;
@@ -518,9 +514,9 @@ function renderProgressChart(rows){
     const weekStart = new Date(d);
     weekStart.setDate(d.getDate() - d.getDay());
     const key = weekStart.toISOString().slice(0,10);
-    const normalized = r.discipline === 'Boulder' ? r.gradeValue / 16 : r.gradeValue / 27; // normalize across scales
+    const normalized = r.gradeValue / (GRADES.length - 1);
     if (!byWeek[key] || normalized > byWeek[key].norm){
-      byWeek[key] = { norm: normalized, label: r.grade, discipline: r.discipline };
+      byWeek[key] = { norm: normalized, label: r.grade };
     }
   });
   const weeks = Object.keys(byWeek).sort();
@@ -545,7 +541,7 @@ function renderProgressChart(rows){
         legend: { display:false },
         tooltip: {
           callbacks: {
-            label: (ctx) => byWeek[weeks[ctx.dataIndex]].label + ' (' + byWeek[weeks[ctx.dataIndex]].discipline + ')'
+            label: (ctx) => byWeek[weeks[ctx.dataIndex]].label
           }
         }
       },
@@ -563,23 +559,20 @@ function renderRecentTable(rows){
   body.innerHTML = sorted.map(r => `
     <tr>
       <td class="mono">${r.date || '—'}</td>
-      <td>${r.discipline}</td>
-      <td><span class="grade-pill mono" style="background:${gradeColor(r.discipline==='Boulder'?'Boulder':'Sport', r.grade)}; color:#17161A;">${r.grade}</span></td>
+      <td><span class="grade-pill mono" style="background:${gradeColor(r.grade)}; color:#17161A;">${r.grade}</span></td>
       <td>${r.status}</td>
-      <td>${r.location || '—'}</td>
+      <td>${r.climber || '—'}</td>
     </tr>
-  `).join('') || '<tr><td colspan="5" style="color:var(--chalk-500); text-align:center; padding:20px;">No climbs logged yet.</td></tr>';
+  `).join('') || '<tr><td colspan="4" style="color:var(--chalk-500); text-align:center; padding:20px;">No climbs logged yet.</td></tr>';
 }
 
 /* ---------- Goals ---------- */
-const gDiscSel = document.getElementById('g-discipline');
 const gGradeSel = document.getElementById('g-grade');
-populateGradeSelect(gGradeSel, gDiscSel.value);
-gDiscSel.addEventListener('change', ()=> populateGradeSelect(gGradeSel, gDiscSel.value));
+populateGradeSelect(gGradeSel);
 
 document.getElementById('add-goal-btn').addEventListener('click', ()=>{
   const goals = Store.getGoals();
-  goals.push({ discipline: gDiscSel.value, grade: gGradeSel.value, gradeValue: gradeIndex(gDiscSel.value, gGradeSel.value) });
+  goals.push({ grade: gGradeSel.value, gradeValue: gradeIndex(gGradeSel.value) });
   Store.setGoals(goals);
   renderGoals();
 });
@@ -593,14 +586,13 @@ async function renderGoals(){
     return;
   }
   container.innerHTML = goals.map((g, i) => {
-    const sends = rows.filter(r => r.discipline === g.discipline && (r.status==='Send'||r.status==='Flash'));
+    const sends = rows.filter(r => r.status==='Send'||r.status==='Redpoint');
     const best = sends.reduce((m,r)=> Math.max(m, r.gradeValue), -1);
     const pct = Math.max(0, Math.min(100, ((best+1) / (g.gradeValue+1)) * 100));
     const achieved = best >= g.gradeValue;
     return `
       <div class="goal-card" style="margin-bottom:${i < goals.length-1 ? '18px' : '0'};">
-        <div style="width:130px;">
-          <div style="font-size:12px; color:var(--chalk-500); text-transform:uppercase; letter-spacing:0.05em;">${g.discipline}</div>
+        <div style="width:90px;">
           <div class="display" style="font-size:22px;">${g.grade}</div>
         </div>
         <div class="goal-progress-track"><div class="goal-progress-fill" style="width:${pct}%;"></div></div>
@@ -613,20 +605,64 @@ async function renderGoals(){
 
 /* ---------- Settings ---------- */
 const settings = Store.getSettings();
-if (settings.endpoint) document.getElementById('s-endpoint').value = settings.endpoint;
 if (settings.secret) document.getElementById('s-secret').value = settings.secret;
 
 document.getElementById('save-settings-btn').addEventListener('click', ()=>{
   Store.setSettings({
-    endpoint: document.getElementById('s-endpoint').value.trim(),
     secret: document.getElementById('s-secret').value.trim()
   });
   document.getElementById('settings-feedback').textContent = 'Saved.';
   renderDashboard();
 });
 
-/* ---------- Init ---------- */
-renderDashboard();
+/* ---------- Access lock ---------- */
+// This is a basic deterrent for a personal static site, not real security —
+// the hash below is visible to anyone who views source. It just stops casual
+// visitors from opening the app or hitting your Apps Script endpoint.
+//
+// To set your own passphrase: open a browser console anywhere and run
+  // crypto.subtle.digest('SHA-256', new TextEncoder().encode('your passphrase'))
+  //   .then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
+// then paste the resulting hex string in as ACCESS_SECRET_HASH below.
+const ACCESS_SECRET_HASH = '6b9cd4d271dd9c0d1ca51c808c314b09e54592a23f6773aa401df78738d44acf';
+const UNLOCK_KEY = 'betalog_unlock_hash';
+
+async function sha256Hex(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function unlockApp(){
+  document.getElementById('lock-screen').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  renderDashboard();
+}
+
+document.getElementById('lock-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('lock-input');
+  const error = document.getElementById('lock-error');
+  const hash = await sha256Hex(input.value);
+  if (hash === ACCESS_SECRET_HASH){
+    localStorage.setItem(UNLOCK_KEY, hash);
+    unlockApp();
+  } else {
+    error.textContent = 'Wrong passphrase.';
+    const card = document.querySelector('.lock-card');
+    card.classList.remove('lock-shake');
+    void card.offsetWidth; // restart animation
+    card.classList.add('lock-shake');
+    input.value = '';
+    input.focus();
+  }
+});
+
+(function checkStoredUnlock(){
+  const stored = localStorage.getItem(UNLOCK_KEY);
+  if (stored && stored === ACCESS_SECRET_HASH) unlockApp();
+})();
+
+
 </script>
 </body>
 </html>
