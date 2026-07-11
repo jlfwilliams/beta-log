@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beta Log — Climb Training Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --stone-950:#17161A;
+    --stone-900:#1D1B20;
+    --stone-800:#2B282C;
+    --stone-700:#3A3639;
+    --chalk-100:#EDEAE2;
+    --chalk-300:#C7C2B8;
+    --chalk-500:#8A857D;
+    --tape-green:#6FCF97;
+    --tape-flash:#C8FF4D;
+    --tape-yellow:#FFD166;
+    --tape-orange:#FF8C42;
+    --tape-red:#FF4B3E;
+    --radius-s:4px;
+    --radius-m:8px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--stone-950);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(200,255,77,0.05), transparent 40%),
+      radial-gradient(circle at 90% 85%, rgba(255,75,62,0.05), transparent 40%);
+    color:var(--chalk-100);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .display{font-family:'Bebas Neue',sans-serif; letter-spacing:0.02em;}
+
+  /* Header */
+  header.app-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px; border-bottom:1px solid var(--stone-700);
+    position:sticky; top:0; background:rgba(23,22,26,0.92); backdrop-filter:blur(6px);
+    z-index:20;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{width:22px; height:22px; flex-shrink:0;}
+  .brand-name{font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.06em; color:var(--chalk-100);}
+  .brand-name span{color:var(--tape-flash);}
+  nav.tabs{display:flex; gap:6px; background:var(--stone-900); border-radius:999px; padding:4px; border:1px solid var(--stone-700);}
+  nav.tabs button{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:13px;
+    background:transparent; color:var(--chalk-500); border:none; padding:8px 16px;
+    border-radius:999px; cursor:pointer; transition:all .15s ease;
+  }
+  nav.tabs button.active{background:var(--tape-flash); color:var(--stone-950);}
+  nav.tabs button:not(.active):hover{color:var(--chalk-100);}
+
+  main{max-width:1080px; margin:0 auto; padding:32px 24px 80px;}
+  .view{display:none;}
+  .view.active{display:block; animation:fadeUp .35s ease;}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  h1.page-title{font-family:'Bebas Neue',sans-serif; font-size:38px; letter-spacing:0.03em; margin:0 0 4px;}
+  p.page-sub{color:var(--chalk-500); margin:0 0 28px; font-size:14.5px;}
+
+  /* Stat cards */
+  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:32px;}
+  .stat-card{background:var(--stone-900); border:1px solid var(--stone-700); border-radius:var(--radius-m); padding:16px 18px;}
+  .stat-card .stat-label{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--chalk-500); font-weight:600;}
+  .stat-card .stat-value{font-family:'Bebas Neue',sans-serif; font-size:32px; margin-top:6px; color:var(--chalk-100);}
+  .stat-card .stat-value.accent{color:var(--tape-flash);}
+
+  /* Panels */
+  .panel{background:var(--stone-900); border:1px solid var(--stone-700); border-radius:var(--radius-m); padding:22px 24px; margin-bottom:24px;}
+  .panel h2{font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:0.03em; margin:0 0 4px;}
+  .panel .panel-sub{color:var(--chalk-500); font-size:13px; margin:0 0 18px;}
+
+  /* Pyramid (signature element) */
+  .pyramid-wrap{display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0 4px;}
+  .pyramid-row{display:flex; align-items:center; gap:12px; width:100%;}
+  .pyramid-row .grade-label{width:56px; text-align:right; font-size:12px; color:var(--chalk-300); flex-shrink:0;}
+  .pyramid-row .bar-track{flex:1; display:flex; justify-content:center;}
+  .pyramid-row .bar{
+    height:22px; border-radius:3px; min-width:22px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:var(--stone-950);
+    transition:width .4s ease;
+  }
+  .pyramid-empty{color:var(--chalk-500); font-size:13px; text-align:center; padding:24px 0;}
+
+  /* Form */
+  form#log-form{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  form#log-form .full{grid-column:1/-1;}
+  .field label{display:block; font-size:12px; text-transform:uppercase; letter-spacing:0.06em; color:var(--chalk-500); font-weight:600; margin-bottom:6px;}
+  .field input, .field select, .field textarea{
+    width:100%; background:var(--stone-950); border:1px solid var(--stone-700); color:var(--chalk-100);
+    padding:10px 12px; border-radius:var(--radius-s); font-family:'Inter',sans-serif; font-size:14px;
+  }
+  .field select{cursor:pointer;}
+  .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--tape-flash); outline-offset:1px;}
+  .status-toggle{display:flex; gap:8px;}
+  .status-toggle button{
+    flex:1; padding:10px; border-radius:var(--radius-s); border:1px solid var(--stone-700);
+    background:var(--stone-950); color:var(--chalk-500); font-weight:700; font-size:12.5px;
+    cursor:pointer; text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .status-toggle button.selected[data-status="Send"]{background:var(--tape-green); color:var(--stone-950); border-color:var(--tape-green);}
+  .status-toggle button.selected[data-status="Flash"]{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
+  .status-toggle button.selected[data-status="Project"]{background:var(--tape-orange); color:var(--stone-950); border-color:var(--tape-orange);}
+  .status-toggle button.selected[data-status="Attempt"]{background:var(--tape-red); color:var(--stone-950); border-color:var(--tape-red);}
+
+  .btn-primary{
+    background:var(--tape-flash); color:var(--stone-950); border:none; padding:12px 20px;
+    border-radius:var(--radius-s); font-weight:700; font-size:14px; cursor:pointer; letter-spacing:0.02em;
+  }
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent; border:1px solid var(--stone-700); color:var(--chalk-300); padding:12px 20px; border-radius:var(--radius-s); font-weight:600; font-size:13px; cursor:pointer;}
+
+  #log-feedback{margin-top:14px; font-size:13px; color:var(--tape-flash); min-height:18px;}
+
+  /* Recent log table */
+  table.log-table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  table.log-table th{text-align:left; color:var(--chalk-500); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; padding:8px 10px; border-bottom:1px solid var(--stone-700);}
+  table.log-table td{padding:9px 10px; border-bottom:1px solid var(--stone-800);}
+  .grade-pill{font-family:'JetBrains Mono',monospace; font-weight:700; padding:2px 8px; border-radius:20px; font-size:12px; display:inline-block;}
+
+  /* Goals */
+  .goal-card{display:flex; align-items:center; gap:20px;}
+  .goal-progress-track{flex:1; height:14px; background:var(--stone-950); border-radius:20px; overflow:hidden; border:1px solid var(--stone-700);}
+  .goal-progress-fill{height:100%; background:linear-gradient(90deg,var(--tape-green),var(--tape-flash)); border-radius:20px 0 0 20px; transition:width .5s ease;}
+  .goal-form{display:flex; gap:10px; align-items:end; margin-top:16px; flex-wrap:wrap;}
+
+  .settings-note{font-size:12.5px; color:var(--chalk-500); line-height:1.6;}
+  .settings-note code{background:var(--stone-950); padding:2px 6px; border-radius:4px; color:var(--tape-flash);}
+
+  canvas{max-width:100%;}
+
+  @media (max-width:720px){
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+    form#log-form{grid-template-columns:1fr;}
+    nav.tabs button{padding:8px 12px; font-size:12px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" fill="none">
+      <path d="M2 18L8 8L12 14L16 6L22 18" stroke="#C8FF4D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="brand-name">BETA<span>LOG</span></div>
+  </div>
+  <nav class="tabs">
+    <button data-view="dashboard" class="active">Dashboard</button>
+    <button data-view="log">Log Climb</button>
+    <button data-view="goals">Goals</button>
+    <button data-view="settings">Settings</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <section class="view active" id="view-dashboard">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-sub">Your progress, pulled straight from your climb log.</p>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Climbs</div>
+        <div class="stat-value" id="stat-total">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Sends</div>
+        <div class="stat-value" id="stat-sends">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Send Rate</div>
+        <div class="stat-value" id="stat-rate">0%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Current Max</div>
+        <div class="stat-value accent" id="stat-max">—</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Grade Pyramid</h2>
+      <p class="panel-sub">Every send, stacked by grade — the classic way to see where your base is thin.</p>
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button class="btn-ghost" id="pyramid-boulder" style="padding:6px 14px; font-size:12px;">Boulder (V)</button>
+        <button class="btn-ghost" id="pyramid-route" style="padding:6px 14px; font-size:12px;">Route (YDS)</button>
+      </div>
+      <div class="pyramid-wrap" id="pyramid-container"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Progress Over Time</h2>
+      <p class="panel-sub">Hardest grade sent per week.</p>
+      <canvas id="progress-chart" height="90"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Recent Sessions</h2>
+      <p class="panel-sub">Last 10 entries from your log.</p>
+      <table class="log-table">
+        <thead><tr><th>Date</th><th>Discipline</th><th>Grade</th><th>Status</th><th>Location</th></tr></thead>
+        <tbody id="recent-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- LOG -->
+  <section class="view" id="view-log">
+    <h1 class="page-title">Log a Climb</h1>
+    <p class="page-sub">One entry per attempt or send. It syncs straight to your sheet.</p>
+
+    <div class="panel">
+      <form id="log-form">
+        <div class="field">
+          <label for="f-date">Date</label>
+          <input type="date" id="f-date" required>
+        </div>
+        <div class="field">
+          <label for="f-discipline">Discipline</label>
+          <select id="f-discipline">
+            <option value="Boulder">Boulder</option>
+            <option value="Sport">Sport</option>
+            <option value="Top Rope">Top Rope</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-grade">Grade</label>
+          <select id="f-grade"></select>
+        </div>
+        <div class="field">
+          <label for="f-attempts">Attempts</label>
+          <input type="number" id="f-attempts" min="1" value="1">
+        </div>
+        <div class="field full">
+          <label>Status</label>
+          <div class="status-toggle" id="status-toggle">
+            <button type="button" data-status="Flash">Flash</button>
+            <button type="button" data-status="Send" class="selected">Send</button>
+            <button type="button" data-status="Project">Project</button>
+            <button type="button" data-status="Attempt">Attempt</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-location">Gym / Crag</label>
+          <input type="text" id="f-location" placeholder="e.g. Movement Plano">
+        </div>
+        <div class="field">
+          <label for="f-notes">Notes</label>
+          <input type="text" id="f-notes" placeholder="beta, conditions, how it felt...">
+        </div>
+        <div class="full">
+          <button type="submit" class="btn-primary">Save Climb</button>
+          <span id="log-feedback"></span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- GOALS -->
+  <section class="view" id="view-goals">
+    <h1 class="page-title">Goals</h1>
+    <p class="page-sub">Set a target grade and watch your pyramid climb toward it.</p>
+
+    <div class="panel" id="goals-container">
+      <!-- goal cards injected here -->
+    </div>
+
+    <div class="panel">
+      <h2>Set a New Goal</h2>
+      <div class="goal-form">
+        <div class="field">
+          <label for="g-discipline">Discipline</label>
+          <select id="g-discipline">
+            <option value="Boulder">Boulder</option>
+            <option value="Sport">Sport</option>
+            <option value="Top Rope">Top Rope</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="g-grade">Target Grade</label>
+          <select id="g-grade"></select>
+        </div>
+        <button class="btn-primary" id="add-goal-btn">Add Goal</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="view-settings">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-sub">Connect this app to your Google Sheet.</p>
+
+    <div class="panel">
+      <h2>Apps Script Web App URL</h2>
+      <p class="panel-sub">Paste the deployment URL from your Google Apps Script (see README for setup).</p>
+      <div class="field" style="margin-bottom:12px;">
+        <input type="text" id="s-endpoint" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <div class="field" style="margin-bottom:16px;">
+        <label for="s-secret">Shared secret (optional, must match the script)</label>
+        <input type="text" id="s-secret" placeholder="leave blank if none">
+      </div>
+      <button class="btn-primary" id="save-settings-btn">Save & Sync</button>
+      <span id="settings-feedback" style="margin-left:12px; font-size:13px; color:var(--tape-flash);"></span>
+      <p class="settings-note" style="margin-top:16px;">
+        Without a connected sheet, Beta Log stores climbs in your browser (<code>localStorage</code>) so you can try it out.
+        Once you add an endpoint, new climbs are sent to your sheet and the dashboard reads from it.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ---------- Grade tables ---------- */
+const BOULDER_GRADES = Array.from({length:17}, (_,i)=>`V${i}`); // V0–V16
+const ROUTE_GRADES = (() => {
+  const base = [5.6,5.7,5.8,5.9];
+  const letters = ['a','b','c','d'];
+  const list = base.map(g => `5.${String(g).split('.')[1]}`);
+  for (let n=10;n<=15;n++){ letters.forEach(l => list.push(`5.${n}${l}`)); }
+  return list;
+})();
+
+function gradeList(discipline){ return discipline === 'Boulder' ? BOULDER_GRADES : ROUTE_GRADES; }
+function gradeIndex(discipline, grade){ return gradeList(discipline).indexOf(grade); }
+function gradeColor(discipline, grade){
+  const list = gradeList(discipline);
+  const idx = list.indexOf(grade);
+  const pct = idx / Math.max(list.length-1,1);
+  const stops = ['#6FCF97','#C8FF4D','#FFD166','#FF8C42','#FF4B3E'];
+  const pos = Math.round(pct * (stops.length-1));
+  return stops[Math.max(0, Math.min(stops.length-1, pos))];
+}
+
+function populateGradeSelect(sel, discipline){
+  sel.innerHTML = gradeList(discipline).map(g=>`<option value="${g}">${g}</option>`).join('');
+}
+
+/* ---------- Storage layer (localStorage + optional Apps Script sync) ---------- */
+const Store = {
+  key: 'betalog_climbs',
+  goalsKey: 'betalog_goals',
+  settingsKey: 'betalog_settings',
+
+  getSettings(){ return JSON.parse(localStorage.getItem(this.settingsKey) || '{}'); },
+  setSettings(s){ localStorage.setItem(this.settingsKey, JSON.stringify(s)); },
+
+  getLocal(){ return JSON.parse(localStorage.getItem(this.key) || '[]'); },
+  setLocal(rows){ localStorage.setItem(this.key, JSON.stringify(rows)); },
+
+  getGoals(){ return JSON.parse(localStorage.getItem(this.goalsKey) || '[]'); },
+  setGoals(g){ localStorage.setItem(this.goalsKey, JSON.stringify(g)); },
+
+  async fetchAll(){
+    const { endpoint } = this.getSettings();
+    if (!endpoint) return this.getLocal();
+    try {
+      const res = await fetch(endpoint, { method:'GET' });
+      const json = await res.json();
+      if (json.ok) return json.data.map(r => ({
+        date: r.date, discipline: r.discipline, grade: r.grade,
+        gradeValue: Number(r.gradeValue), status: r.status,
+        attempts: Number(r.attempts), location: r.location, notes: r.notes
+      }));
+    } catch(e){ console.warn('Sheet fetch failed, falling back to local.', e); }
+    return this.getLocal();
+  },
+
+  async add(entry){
+    const { endpoint, secret } = this.getSettings();
+    // always cache locally so the UI stays responsive / works offline
+    const rows = this.getLocal();
+    rows.push(entry);
+    this.setLocal(rows);
+
+    if (!endpoint) return { ok:true, local:true };
+    try {
+      // NOTE: no explicit Content-Type header — this avoids a CORS preflight
+      // that Apps Script's doPost doesn't handle. Body is still JSON text.
+      const res = await fetch(endpoint, {
+        method:'POST',
+        body: JSON.stringify({ ...entry, secret: secret || '' })
+      });
+      const json = await res.json();
+      return json;
+    } catch(e){
+      console.warn('Sheet sync failed, entry kept locally only.', e);
+      return { ok:false, local:true, error:String(e) };
+    }
+  }
+};
+
+/* ---------- Navigation ---------- */
+document.querySelectorAll('nav.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    if (btn.dataset.view === 'dashboard') renderDashboard();
+    if (btn.dataset.view === 'goals') renderGoals();
+  });
+});
+
+/* ---------- Log form ---------- */
+const disciplineSel = document.getElementById('f-discipline');
+const gradeSel = document.getElementById('f-grade');
+populateGradeSelect(gradeSel, disciplineSel.value);
+disciplineSel.addEventListener('change', () => populateGradeSelect(gradeSel, disciplineSel.value));
+document.getElementById('f-date').valueAsDate = new Date();
+
+let selectedStatus = 'Send';
+document.querySelectorAll('#status-toggle button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#status-toggle button').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedStatus = btn.dataset.status;
+  });
+});
+
+document.getElementById('log-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const discipline = disciplineSel.value;
+  const grade = gradeSel.value;
+  const entry = {
+    date: document.getElementById('f-date').value,
+    discipline,
+    grade,
+    gradeValue: gradeIndex(discipline, grade),
+    status: selectedStatus,
+    attempts: Number(document.getElementById('f-attempts').value) || 1,
+    location: document.getElementById('f-location').value,
+    notes: document.getElementById('f-notes').value
+  };
+  const feedback = document.getElementById('log-feedback');
+  feedback.textContent = 'Saving...';
+  const result = await Store.add(entry);
+  feedback.textContent = result.ok
+    ? (result.local ? 'Saved locally (no sheet connected).' : 'Saved to sheet ✓')
+    : 'Saved locally — sheet sync failed, check Settings.';
+  document.getElementById('f-notes').value = '';
+  document.getElementById('f-attempts').value = 1;
+});
+
+/* ---------- Dashboard ---------- */
+let progressChart = null;
+let pyramidDiscipline = 'Boulder';
+
+document.getElementById('pyramid-boulder').addEventListener('click', ()=>{ pyramidDiscipline='Boulder'; renderDashboard(); });
+document.getElementById('pyramid-route').addEventListener('click', ()=>{ pyramidDiscipline='Route'; renderDashboard(); });
+
+async function renderDashboard(){
+  const rows = await Store.fetchAll();
+
+  document.getElementById('stat-total').textContent = rows.length;
+  const sends = rows.filter(r => r.status === 'Send' || r.status === 'Flash');
+  document.getElementById('stat-sends').textContent = sends.length;
+  document.getElementById('stat-rate').textContent = rows.length ? Math.round(sends.length / rows.length * 100) + '%' : '0%';
+
+  const maxSend = sends.reduce((best, r) => {
+    const list = gradeList(r.discipline === 'Boulder' ? 'Boulder' : 'Route');
+    return (!best || r.gradeValue > best.gradeValue) ? r : best;
+  }, null);
+  document.getElementById('stat-max').textContent = maxSend ? maxSend.grade : '—';
+
+  renderPyramid(rows);
+  renderProgressChart(rows);
+  renderRecentTable(rows);
+}
+
+function renderPyramid(rows){
+  const disc = pyramidDiscipline === 'Boulder' ? 'Boulder' : ['Sport','Top Rope'];
+  const filtered = rows.filter(r => Array.isArray(disc) ? disc.includes(r.discipline) : r.discipline === disc)
+                       .filter(r => r.status === 'Send' || r.status === 'Flash');
+  document.getElementById('pyramid-boulder').style.borderColor = pyramidDiscipline==='Boulder' ? 'var(--tape-flash)' : 'var(--stone-700)';
+  document.getElementById('pyramid-route').style.borderColor = pyramidDiscipline==='Route' ? 'var(--tape-flash)' : 'var(--stone-700)';
+
+  const container = document.getElementById('pyramid-container');
+  if (!filtered.length){
+    container.innerHTML = '<div class="pyramid-empty">No sends logged yet for this discipline. Log a climb to start building your pyramid.</div>';
+    return;
+  }
+  const counts = {};
+  filtered.forEach(r => { counts[r.grade] = (counts[r.grade]||0) + 1; });
+  const disciplineKey = pyramidDiscipline === 'Boulder' ? 'Boulder' : 'Sport';
+  const gradesPresent = Object.keys(counts).sort((a,b)=> gradeIndex(disciplineKey,b) - gradeIndex(disciplineKey,a));
+  const maxCount = Math.max(...Object.values(counts));
+
+  container.innerHTML = gradesPresent.map(g => {
+    const count = counts[g];
+    const widthPct = Math.max((count / maxCount) * 100, 8);
+    const color = gradeColor(disciplineKey, g);
+    return `<div class="pyramid-row">
+      <div class="grade-label mono">${g}</div>
+      <div class="bar-track"><div class="bar" style="width:${widthPct}%; background:${color};">${count}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderProgressChart(rows){
+  const sends = rows.filter(r => (r.status === 'Send' || r.status === 'Flash') && r.date);
+  const byWeek = {};
+  sends.forEach(r => {
+    if (!r.date) return;
+    const d = new Date(r.date);
+    if (isNaN(d)) return;
+    const weekStart = new Date(d);
+    weekStart.setDate(d.getDate() - d.getDay());
+    const key = weekStart.toISOString().slice(0,10);
+    const normalized = r.discipline === 'Boulder' ? r.gradeValue / 16 : r.gradeValue / 27; // normalize across scales
+    if (!byWeek[key] || normalized > byWeek[key].norm){
+      byWeek[key] = { norm: normalized, label: r.grade, discipline: r.discipline };
+    }
+  });
+  const weeks = Object.keys(byWeek).sort();
+  const ctx = document.getElementById('progress-chart');
+  if (progressChart) progressChart.destroy();
+  progressChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: weeks,
+      datasets: [{
+        label: 'Hardest send (normalized)',
+        data: weeks.map(w => (byWeek[w].norm * 100).toFixed(1)),
+        borderColor: '#C8FF4D',
+        backgroundColor: 'rgba(200,255,77,0.12)',
+        pointBackgroundColor: '#C8FF4D',
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { display:false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => byWeek[weeks[ctx.dataIndex]].label + ' (' + byWeek[weeks[ctx.dataIndex]].discipline + ')'
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color:'#8A857D' }, grid:{ color:'#2B282C' } },
+        y: { ticks: { color:'#8A857D' }, grid:{ color:'#2B282C' }, title:{ display:true, text:'Difficulty %', color:'#8A857D' } }
+      }
+    }
+  });
+}
+
+function renderRecentTable(rows){
+  const sorted = [...rows].sort((a,b)=> new Date(b.date) - new Date(a.date)).slice(0,10);
+  const body = document.getElementById('recent-table-body');
+  body.innerHTML = sorted.map(r => `
+    <tr>
+      <td class="mono">${r.date || '—'}</td>
+      <td>${r.discipline}</td>
+      <td><span class="grade-pill mono" style="background:${gradeColor(r.discipline==='Boulder'?'Boulder':'Sport', r.grade)}; color:#17161A;">${r.grade}</span></td>
+      <td>${r.status}</td>
+      <td>${r.location || '—'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="color:var(--chalk-500); text-align:center; padding:20px;">No climbs logged yet.</td></tr>';
+}
+
+/* ---------- Goals ---------- */
+const gDiscSel = document.getElementById('g-discipline');
+const gGradeSel = document.getElementById('g-grade');
+populateGradeSelect(gGradeSel, gDiscSel.value);
+gDiscSel.addEventListener('change', ()=> populateGradeSelect(gGradeSel, gDiscSel.value));
+
+document.getElementById('add-goal-btn').addEventListener('click', ()=>{
+  const goals = Store.getGoals();
+  goals.push({ discipline: gDiscSel.value, grade: gGradeSel.value, gradeValue: gradeIndex(gDiscSel.value, gGradeSel.value) });
+  Store.setGoals(goals);
+  renderGoals();
+});
+
+async function renderGoals(){
+  const goals = Store.getGoals();
+  const rows = await Store.fetchAll();
+  const container = document.getElementById('goals-container');
+  if (!goals.length){
+    container.innerHTML = '<p class="panel-sub" style="margin:0;">No goals set yet. Add one below.</p>';
+    return;
+  }
+  container.innerHTML = goals.map((g, i) => {
+    const sends = rows.filter(r => r.discipline === g.discipline && (r.status==='Send'||r.status==='Flash'));
+    const best = sends.reduce((m,r)=> Math.max(m, r.gradeValue), -1);
+    const pct = Math.max(0, Math.min(100, ((best+1) / (g.gradeValue+1)) * 100));
+    const achieved = best >= g.gradeValue;
+    return `
+      <div class="goal-card" style="margin-bottom:${i < goals.length-1 ? '18px' : '0'};">
+        <div style="width:130px;">
+          <div style="font-size:12px; color:var(--chalk-500); text-transform:uppercase; letter-spacing:0.05em;">${g.discipline}</div>
+          <div class="display" style="font-size:22px;">${g.grade}</div>
+        </div>
+        <div class="goal-progress-track"><div class="goal-progress-fill" style="width:${pct}%;"></div></div>
+        <div style="width:90px; text-align:right; font-size:13px; color:${achieved ? 'var(--tape-flash)' : 'var(--chalk-300)'};">
+          ${achieved ? 'Reached ✓' : Math.round(pct) + '%'}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ---------- Settings ---------- */
+const settings = Store.getSettings();
+if (settings.endpoint) document.getElementById('s-endpoint').value = settings.endpoint;
+if (settings.secret) document.getElementById('s-secret').value = settings.secret;
+
+document.getElementById('save-settings-btn').addEventListener('click', ()=>{
+  Store.setSettings({
+    endpoint: document.getElementById('s-endpoint').value.trim(),
+    secret: document.getElementById('s-secret').value.trim()
+  });
+  document.getElementById('settings-feedback').textContent = 'Saved.';
+  renderDashboard();
+});
+
+/* ---------- Init ---------- */
+renderDashboard();
+</script>
+</body>
+</html>
