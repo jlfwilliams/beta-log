@@ -96,11 +96,18 @@
   form#log-form .full{grid-column:1/-1;}
   .field label{display:block; font-size:12px; text-transform:uppercase; letter-spacing:0.06em; color:var(--chalk-500); font-weight:600; margin-bottom:6px;}
   .field input, .field select, .field textarea{
-    width:100%; background:var(--stone-950); border:1px solid var(--stone-700); color:var(--chalk-100);
+    width:100%; min-width:0; background:var(--stone-950); border:1px solid var(--stone-700); color:var(--chalk-100);
     padding:10px 12px; border-radius:var(--radius-s); font-family:'Inter',sans-serif; font-size:14px;
   }
   .field select{cursor:pointer;}
   .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--tape-flash); outline-offset:1px;}
+  /* Date inputs render with a browser-controlled intrinsic width that can overflow
+     a narrow grid column on mobile, and iOS auto-zooms on focus for inputs under 16px.
+     Force it to respect the container and stay at 16px so it behaves like the rest of the form. */
+  .field input[type="date"]{
+    width:100%; min-width:0; -webkit-appearance:none; appearance:none; font-size:16px;
+  }
+  .field input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
   .status-toggle{display:flex; gap:8px;}
   .status-toggle button{
     flex:1; padding:10px; border-radius:var(--radius-s); border:1px solid var(--stone-700);
@@ -110,6 +117,8 @@
   .status-toggle button.selected[data-status="Attempt"]{background:var(--tape-red); color:var(--stone-950); border-color:var(--tape-red);}
   .status-toggle button.selected[data-status="Send"]{background:var(--tape-green); color:var(--stone-950); border-color:var(--tape-green);}
   .status-toggle button.selected[data-status="Redpoint"]{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
+  #climber-toggle button.selected{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
+  #pyramid-climber-toggle button.selected{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
 
   .btn-primary{
     background:var(--tape-flash); color:var(--stone-950); border:none; padding:12px 20px;
@@ -132,8 +141,6 @@
   .goal-progress-fill{height:100%; background:linear-gradient(90deg,var(--tape-green),var(--tape-flash)); border-radius:20px 0 0 20px; transition:width .5s ease;}
   .goal-form{display:flex; gap:10px; align-items:end; margin-top:16px; flex-wrap:wrap;}
 
-  .settings-note{font-size:12.5px; color:var(--chalk-500); line-height:1.6;}
-  .settings-note code{background:var(--stone-950); padding:2px 6px; border-radius:4px; color:var(--tape-flash);}
 
   /* Lock screen */
   #lock-screen{
@@ -202,7 +209,6 @@
     <button data-view="dashboard" class="active">Dashboard</button>
     <button data-view="log">Log Climb</button>
     <button data-view="goals">Goals</button>
-    <button data-view="settings">Settings</button>
   </nav>
 </header>
 
@@ -234,7 +240,12 @@
 
     <div class="panel">
       <h2>Grade Pyramid</h2>
-      <p class="panel-sub">Every send, stacked by grade — the classic way to see where your base is thin.</p>
+      <p class="panel-sub">Number of sends at each grade, so you can see which grades need more mileage.</p>
+      <div class="status-toggle" id="pyramid-climber-toggle" style="max-width:320px; margin-bottom:14px;">
+        <button type="button" data-climber="All" class="selected">All</button>
+        <button type="button" data-climber="Parker">Parker</button>
+        <button type="button" data-climber="Finn">Finn</button>
+      </div>
       <div class="pyramid-wrap" id="pyramid-container"></div>
     </div>
 
@@ -261,7 +272,7 @@
 
     <div class="panel">
       <form id="log-form">
-        <div class="field">
+        <div class="field full">
           <label for="f-date">Date</label>
           <input type="date" id="f-date" required>
         </div>
@@ -270,11 +281,11 @@
           <select id="f-grade"></select>
         </div>
         <div class="field">
-          <label for="f-climber">Climber</label>
-          <select id="f-climber">
-            <option value="Parker">Parker</option>
-            <option value="Finn">Finn</option>
-          </select>
+          <label>Climber</label>
+          <div class="status-toggle" id="climber-toggle">
+            <button type="button" data-climber="Parker" class="selected">Parker</button>
+            <button type="button" data-climber="Finn">Finn</button>
+          </div>
         </div>
         <div class="field full">
           <label>Status</label>
@@ -295,7 +306,7 @@
   <!-- GOALS -->
   <section class="view" id="view-goals">
     <h1 class="page-title">Goals</h1>
-    <p class="page-sub">Set a target lead grade and watch your pyramid climb toward it.</p>
+    <p class="page-sub">Set a target lead grade and track your progress toward it.</p>
 
     <div class="panel" id="goals-container">
       <!-- goal cards injected here -->
@@ -313,25 +324,6 @@
     </div>
   </section>
 
-  <!-- SETTINGS -->
-  <section class="view" id="view-settings">
-    <h1 class="page-title">Settings</h1>
-    <p class="page-sub">Connect this app to your Google Sheet.</p>
-
-    <div class="panel">
-      <h2>Shared Secret</h2>
-      <p class="panel-sub">Must match the secret configured in the Apps Script (see README). The sheet connection itself is already built in.</p>
-      <div class="field" style="margin-bottom:16px;">
-        <label for="s-secret">Shared secret (optional, must match the script)</label>
-        <input type="text" id="s-secret" placeholder="leave blank if none">
-      </div>
-      <button class="btn-primary" id="save-settings-btn">Save</button>
-      <span id="settings-feedback" style="margin-left:12px; font-size:13px; color:var(--tape-flash);"></span>
-      <p class="settings-note" style="margin-top:16px;">
-        If the sheet connection isn't set up yet, Beta Log stores climbs in your browser (<code>localStorage</code>) so you can try it out.
-      </p>
-    </div>
-  </section>
 
 </main>
 </div>
@@ -368,16 +360,44 @@ function populateGradeSelect(sel){
 const Store = {
   key: 'betalog_climbs',
   goalsKey: 'betalog_goals',
-  settingsKey: 'betalog_settings',
-
-  getSettings(){ return JSON.parse(localStorage.getItem(this.settingsKey) || '{}'); },
-  setSettings(s){ localStorage.setItem(this.settingsKey, JSON.stringify(s)); },
 
   getLocal(){ return JSON.parse(localStorage.getItem(this.key) || '[]'); },
   setLocal(rows){ localStorage.setItem(this.key, JSON.stringify(rows)); },
 
-  getGoals(){ return JSON.parse(localStorage.getItem(this.goalsKey) || '[]'); },
-  setGoals(g){ localStorage.setItem(this.goalsKey, JSON.stringify(g)); },
+  getLocalGoals(){ return JSON.parse(localStorage.getItem(this.goalsKey) || '[]'); },
+  setLocalGoals(g){ localStorage.setItem(this.goalsKey, JSON.stringify(g)); },
+
+  async fetchGoals(){
+    if (!isConfigured()) return this.getLocalGoals();
+    try {
+      const res = await fetch(APPS_SCRIPT_URL + '?type=goals', { method:'GET' });
+      const json = await res.json();
+      if (json.ok) return json.data.map(g => ({
+        grade: g.grade, gradeValue: Number(g.gradeValue)
+      }));
+    } catch(e){ console.warn('Goals fetch failed, falling back to local.', e); }
+    return this.getLocalGoals();
+  },
+
+  async addGoal(goal){
+    // always cache locally so the UI stays responsive / works offline
+    const goals = this.getLocalGoals();
+    goals.push(goal);
+    this.setLocalGoals(goals);
+
+    if (!isConfigured()) return { ok:true, local:true };
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method:'POST',
+        body: JSON.stringify({ ...goal, type:'goal' })
+      });
+      const json = await res.json();
+      return json;
+    } catch(e){
+      console.warn('Goal sync failed, kept locally only.', e);
+      return { ok:false, local:true, error:String(e) };
+    }
+  },
 
   async fetchAll(){
     if (!isConfigured()) return this.getLocal();
@@ -394,7 +414,6 @@ const Store = {
   },
 
   async add(entry){
-    const { secret } = this.getSettings();
     // always cache locally so the UI stays responsive / works offline
     const rows = this.getLocal();
     rows.push(entry);
@@ -406,7 +425,7 @@ const Store = {
       // that Apps Script's doPost doesn't handle. Body is still JSON text.
       const res = await fetch(APPS_SCRIPT_URL, {
         method:'POST',
-        body: JSON.stringify({ ...entry, secret: secret || '' })
+        body: JSON.stringify(entry)
       });
       const json = await res.json();
       return json;
@@ -443,6 +462,15 @@ document.querySelectorAll('#status-toggle button').forEach(btn=>{
   });
 });
 
+let selectedClimber = 'Parker';
+document.querySelectorAll('#climber-toggle button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#climber-toggle button').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedClimber = btn.dataset.climber;
+  });
+});
+
 document.getElementById('log-form').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const grade = gradeSel.value;
@@ -451,21 +479,33 @@ document.getElementById('log-form').addEventListener('submit', async (e)=>{
     grade,
     gradeValue: gradeIndex(grade),
     status: selectedStatus,
-    climber: document.getElementById('f-climber').value
+    climber: selectedClimber
   };
   const feedback = document.getElementById('log-feedback');
   feedback.textContent = 'Saving...';
   const result = await Store.add(entry);
   feedback.textContent = result.ok
     ? (result.local ? 'Saved locally (no sheet connected).' : 'Saved to sheet ✓')
-    : 'Saved locally — sheet sync failed, check Settings.';
+    : 'Saved locally — sheet sync failed, check the Apps Script URL.';
 });
 
 /* ---------- Dashboard ---------- */
 let progressChart = null;
+let dashboardRows = [];
+let pyramidClimberFilter = 'All';
+
+document.querySelectorAll('#pyramid-climber-toggle button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#pyramid-climber-toggle button').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    pyramidClimberFilter = btn.dataset.climber;
+    renderPyramid(dashboardRows);
+  });
+});
 
 async function renderDashboard(){
   const rows = await Store.fetchAll();
+  dashboardRows = rows;
 
   document.getElementById('stat-total').textContent = rows.length;
   const sends = rows.filter(r => r.status === 'Send' || r.status === 'Redpoint');
@@ -481,7 +521,8 @@ async function renderDashboard(){
 }
 
 function renderPyramid(rows){
-  const filtered = rows.filter(r => r.status === 'Send' || r.status === 'Redpoint');
+  const byClimber = pyramidClimberFilter === 'All' ? rows : rows.filter(r => r.climber === pyramidClimberFilter);
+  const filtered = byClimber.filter(r => r.status === 'Send' || r.status === 'Redpoint');
 
   const container = document.getElementById('pyramid-container');
   if (!filtered.length){
@@ -570,15 +611,16 @@ function renderRecentTable(rows){
 const gGradeSel = document.getElementById('g-grade');
 populateGradeSelect(gGradeSel);
 
-document.getElementById('add-goal-btn').addEventListener('click', ()=>{
-  const goals = Store.getGoals();
-  goals.push({ grade: gGradeSel.value, gradeValue: gradeIndex(gGradeSel.value) });
-  Store.setGoals(goals);
+document.getElementById('add-goal-btn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('add-goal-btn');
+  btn.disabled = true;
+  await Store.addGoal({ grade: gGradeSel.value, gradeValue: gradeIndex(gGradeSel.value) });
+  btn.disabled = false;
   renderGoals();
 });
 
 async function renderGoals(){
-  const goals = Store.getGoals();
+  const goals = await Store.fetchGoals();
   const rows = await Store.fetchAll();
   const container = document.getElementById('goals-container');
   if (!goals.length){
@@ -602,18 +644,6 @@ async function renderGoals(){
       </div>`;
   }).join('');
 }
-
-/* ---------- Settings ---------- */
-const settings = Store.getSettings();
-if (settings.secret) document.getElementById('s-secret').value = settings.secret;
-
-document.getElementById('save-settings-btn').addEventListener('click', ()=>{
-  Store.setSettings({
-    secret: document.getElementById('s-secret').value.trim()
-  });
-  document.getElementById('settings-feedback').textContent = 'Saved.';
-  renderDashboard();
-});
 
 /* ---------- Access lock ---------- */
 // This is a basic deterrent for a personal static site, not real security —
