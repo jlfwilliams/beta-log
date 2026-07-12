@@ -118,7 +118,7 @@
   .status-toggle button.selected[data-status="Send"]{background:var(--tape-green); color:var(--stone-950); border-color:var(--tape-green);}
   .status-toggle button.selected[data-status="Redpoint"]{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
   #climber-toggle button.selected{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
-  #pyramid-climber-toggle button.selected{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
+  #dashboard-climber-toggle button.selected{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
 
   .btn-primary{
     background:var(--tape-flash); color:var(--stone-950); border:none; padding:12px 20px;
@@ -209,6 +209,7 @@
     <button data-view="dashboard" class="active">Dashboard</button>
     <button data-view="log">Log Climb</button>
     <button data-view="goals">Goals</button>
+    <button data-view="plan">Plan</button>
   </nav>
 </header>
 
@@ -218,6 +219,12 @@
   <section class="view active" id="view-dashboard">
     <h1 class="page-title">Dashboard</h1>
     <p class="page-sub">Your progress, pulled straight from your climb log.</p>
+
+    <div class="status-toggle" id="dashboard-climber-toggle" style="max-width:320px; margin-bottom:24px;">
+      <button type="button" data-climber="All" class="selected">All</button>
+      <button type="button" data-climber="Parker">Parker</button>
+      <button type="button" data-climber="Finn">Finn</button>
+    </div>
 
     <div class="stat-row">
       <div class="stat-card">
@@ -241,11 +248,6 @@
     <div class="panel">
       <h2>Grade Pyramid</h2>
       <p class="panel-sub">Number of sends at each grade, so you can see which grades need more mileage.</p>
-      <div class="status-toggle" id="pyramid-climber-toggle" style="max-width:320px; margin-bottom:14px;">
-        <button type="button" data-climber="All" class="selected">All</button>
-        <button type="button" data-climber="Parker">Parker</button>
-        <button type="button" data-climber="Finn">Finn</button>
-      </div>
       <div class="pyramid-wrap" id="pyramid-container"></div>
     </div>
 
@@ -324,6 +326,27 @@
     </div>
   </section>
 
+  <!-- PLAN -->
+  <section class="view" id="view-plan">
+    <h1 class="page-title">Training Plan</h1>
+    <p class="page-sub">Pulled from your plan sheet — the current training week is picked out automatically.</p>
+
+    <div class="panel">
+      <h2>This Week</h2>
+      <p class="panel-sub" id="plan-current-sub">Loading...</p>
+      <div id="plan-current-body"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Full Plan</h2>
+      <p class="panel-sub">Every training week in your plan sheet.</p>
+      <table class="log-table">
+        <thead><tr><th>Week</th><th>Starts</th><th>Climb 1</th><th>Climb 2</th><th>Climb 3</th><th>Climb 4</th><th>First Climber</th></tr></thead>
+        <tbody id="plan-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
 
 </main>
 </div>
@@ -399,6 +422,16 @@ const Store = {
     }
   },
 
+  async fetchPlan(){
+    if (!isConfigured()) return [];
+    try {
+      const res = await fetch(APPS_SCRIPT_URL + '?type=plan', { method:'GET' });
+      const json = await res.json();
+      if (json.ok) return json.data;
+    } catch(e){ console.warn('Plan fetch failed.', e); }
+    return [];
+  },
+
   async fetchAll(){
     if (!isConfigured()) return this.getLocal();
     try {
@@ -445,6 +478,7 @@ document.querySelectorAll('nav.tabs button').forEach(btn => {
     document.getElementById('view-' + btn.dataset.view).classList.add('active');
     if (btn.dataset.view === 'dashboard') renderDashboard();
     if (btn.dataset.view === 'goals') renderGoals();
+    if (btn.dataset.view === 'plan') renderPlan();
   });
 });
 
@@ -492,20 +526,26 @@ document.getElementById('log-form').addEventListener('submit', async (e)=>{
 /* ---------- Dashboard ---------- */
 let progressChart = null;
 let dashboardRows = [];
-let pyramidClimberFilter = 'All';
+let dashboardClimberFilter = 'All';
 
-document.querySelectorAll('#pyramid-climber-toggle button').forEach(btn=>{
+document.querySelectorAll('#dashboard-climber-toggle button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    document.querySelectorAll('#pyramid-climber-toggle button').forEach(b=>b.classList.remove('selected'));
+    document.querySelectorAll('#dashboard-climber-toggle button').forEach(b=>b.classList.remove('selected'));
     btn.classList.add('selected');
-    pyramidClimberFilter = btn.dataset.climber;
-    renderPyramid(dashboardRows);
+    dashboardClimberFilter = btn.dataset.climber;
+    applyDashboardFilter();
   });
 });
 
 async function renderDashboard(){
-  const rows = await Store.fetchAll();
-  dashboardRows = rows;
+  dashboardRows = await Store.fetchAll();
+  applyDashboardFilter();
+}
+
+function applyDashboardFilter(){
+  const rows = dashboardClimberFilter === 'All'
+    ? dashboardRows
+    : dashboardRows.filter(r => r.climber === dashboardClimberFilter);
 
   document.getElementById('stat-total').textContent = rows.length;
   const sends = rows.filter(r => r.status === 'Send' || r.status === 'Redpoint');
@@ -521,8 +561,7 @@ async function renderDashboard(){
 }
 
 function renderPyramid(rows){
-  const byClimber = pyramidClimberFilter === 'All' ? rows : rows.filter(r => r.climber === pyramidClimberFilter);
-  const filtered = byClimber.filter(r => r.status === 'Send' || r.status === 'Redpoint');
+  const filtered = rows.filter(r => r.status === 'Send' || r.status === 'Redpoint');
 
   const container = document.getElementById('pyramid-container');
   if (!filtered.length){
@@ -595,7 +634,8 @@ function renderProgressChart(rows){
 }
 
 function renderRecentTable(rows){
-  const sorted = [...rows].sort((a,b)=> new Date(b.date) - new Date(a.date)).slice(0,10);
+  const toTime = (r) => { const t = new Date(r.date).getTime(); return isNaN(t) ? -Infinity : t; };
+  const sorted = [...rows].sort((a,b)=> toTime(b) - toTime(a)).slice(0,10);
   const body = document.getElementById('recent-table-body');
   body.innerHTML = sorted.map(r => `
     <tr>
@@ -643,6 +683,61 @@ async function renderGoals(){
         </div>
       </div>`;
   }).join('');
+}
+
+/* ---------- Plan ---------- */
+async function renderPlan(){
+  const plan = await Store.fetchPlan();
+  const sorted = [...plan]
+    .filter(row => row.date && !isNaN(new Date(row.date)))
+    .sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // The current training week is the latest week whose start date has already
+  // passed (or is today) — i.e. the last row we haven't walked past yet.
+  let current = null;
+  for (const row of sorted) {
+    const d = new Date(row.date);
+    d.setHours(0,0,0,0);
+    if (d <= today) current = row;
+    else break;
+  }
+
+  const currentSub = document.getElementById('plan-current-sub');
+  const currentBody = document.getElementById('plan-current-body');
+
+  if (!current) {
+    currentSub.textContent = sorted.length
+      ? 'Your plan starts in the future — nothing active yet.'
+      : 'No plan loaded yet — add rows to your plan sheet.';
+    currentBody.innerHTML = '';
+  } else {
+    currentSub.textContent = `Week ${current.week} · starts ${current.date}`;
+    const climbs = [current.climb1, current.climb2, current.climb3, current.climb4].filter(Boolean);
+    currentBody.innerHTML = `
+      <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+        ${climbs.map(g => `<span class="grade-pill mono" style="background:${gradeColor(g)}; color:#17161A; font-size:14px; padding:6px 14px;">${g}</span>`).join('')}
+      </div>
+      <div style="font-size:13.5px; color:var(--chalk-300);">
+        First climb picked by <strong style="color:var(--tape-flash);">${current.firstClimber || '—'}</strong> this week.
+      </div>
+    `;
+  }
+
+  const tbody = document.getElementById('plan-table-body');
+  tbody.innerHTML = sorted.map(row => `
+    <tr style="${current && row.week === current.week ? 'background:rgba(200,255,77,0.08);' : ''}">
+      <td class="mono">${row.week}</td>
+      <td class="mono">${row.date}</td>
+      <td>${row.climb1 || '—'}</td>
+      <td>${row.climb2 || '—'}</td>
+      <td>${row.climb3 || '—'}</td>
+      <td>${row.climb4 || '—'}</td>
+      <td>${row.firstClimber || '—'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" style="color:var(--chalk-500); text-align:center; padding:20px;">No plan rows yet.</td></tr>';
 }
 
 /* ---------- Access lock ---------- */

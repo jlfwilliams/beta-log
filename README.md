@@ -30,6 +30,18 @@ Once someone enters the correct passphrase in the app, it's remembered in their 
    - Who has access: **Anyone**
 5. Click **Deploy**, authorize the permissions Google asks for, then copy the URL ending in `/exec`.
 
+The script auto-creates three tabs the first time it runs: `log` (climbs), `goals`, and `plan`. You don't need to set up headers by hand — but the `plan` tab is meant to be filled in *by you*, since it's your training schedule:
+
+| Week | Date | Climb 1 | Climb 2 | Climb 3 | Climb 4 | First Climber |
+|---|---|---|---|---|---|---|
+| 1 | 2026-06-22 | 5.9 | 5.10a | 5.10c | 5.11a | Parker |
+| 2 | 2026-06-29 | 5.9 | 5.10b | 5.10d | 5.11b | Finn |
+
+- **Week**: training week number, starting at 1 and counting up through the year.
+- **Date**: the day that week *starts*. The app compares this against today's date to figure out which row is the current training week (the most recent start date that isn't in the future).
+- **Climb 1–4**: the grades planned for that week.
+- **First Climber**: whose turn it is to pick the first climb that week.
+
 ## 2. Connect the app
 The Apps Script URL is hardcoded into `index.html` rather than entered in the UI — that way you don't have to hand it out to anyone you share the app with; they only ever see the passphrase screen.
 
