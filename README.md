@@ -5,6 +5,7 @@ A single-page app for logging sport leads in the gym and visualizing progress (g
 ## What's in here
 - `index.html` — the whole app (dashboard + plan + log + goals).
 - `chart.umd.min.js` — Chart.js, vendored locally so the Progress Over Time chart doesn't depend on a CDN (some networks/proxies block or mis-serve CDN scripts, which breaks the chart). Keep this file next to `index.html` when you deploy.
+- `favicon.svg`, `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png` — the browser tab icon, matching the mountain-glyph logo in the header. Keep these next to `index.html` too.
 - `apps-script.gs` — code to paste into Google Apps Script. This turns your Google Sheet into a tiny API the app can read from and write to.
 
 ## 0. Set your access passphrase
@@ -54,7 +55,7 @@ From here, every climb you log is written as a new row in your sheet, and the Da
 Until you replace the placeholder URL, the app still works — it just stores climbs in the browser (`localStorage`) so you can try the UI before wiring up the sheet.
 
 ## 3. Deploy to GitHub Pages
-1. Push this folder to a GitHub repo — `index.html` and `chart.umd.min.js` should sit in the same folder (repo root, or `/docs` if you configure Pages that way). They need to be next to each other since `index.html` loads the chart script by relative path.
+1. Push this folder to a GitHub repo — `index.html`, `chart.umd.min.js`, and the favicon files should all sit in the same folder (repo root, or `/docs` if you configure Pages that way). They need to be next to each other since `index.html` references them by relative path.
 2. In the repo: **Settings > Pages > Build and deployment**, set source to your branch/folder.
 3. GitHub will give you a URL like `https://yourname.github.io/reponame/`.
 
