@@ -6,7 +6,7 @@
 <title>Beta Log — Sport Climbing Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="chart.umd.min.js"></script>
 <style>
   :root{
     --stone-950:#17161A;
@@ -255,6 +255,7 @@
       <h2>Progress Over Time</h2>
       <p class="panel-sub">Hardest grade sent per week.</p>
       <canvas id="progress-chart" height="90"></canvas>
+      <p id="progress-chart-fallback" style="display:none; color:var(--chalk-500); font-size:13px; text-align:center; padding:20px 0; margin:0;"></p>
     </div>
 
     <div class="panel">
@@ -555,9 +556,11 @@ function applyDashboardFilter(){
   const maxSend = sends.reduce((best, r) => (!best || r.gradeValue > best.gradeValue) ? r : best, null);
   document.getElementById('stat-max').textContent = maxSend ? maxSend.grade : '—';
 
-  renderPyramid(rows);
-  renderProgressChart(rows);
-  renderRecentTable(rows);
+  // Each panel is rendered independently — if one throws (e.g. the Chart.js
+  // CDN script failed to load), it must not prevent the others from rendering.
+  try { renderPyramid(rows); } catch(e){ console.error('Grade pyramid failed to render.', e); }
+  try { renderProgressChart(rows); } catch(e){ console.error('Progress chart failed to render.', e); }
+  try { renderRecentTable(rows); } catch(e){ console.error('Recent sessions failed to render.', e); }
 }
 
 function renderPyramid(rows){
@@ -585,6 +588,22 @@ function renderPyramid(rows){
 }
 
 function renderProgressChart(rows){
+  const canvasEl = document.getElementById('progress-chart');
+  const fallback = document.getElementById('progress-chart-fallback');
+
+  // If the Chart.js CDN script failed to load (network block, ad blocker, etc.),
+  // `Chart` won't exist. Fail gracefully here instead of throwing, since an
+  // uncaught error here would otherwise be indistinguishable from other panels
+  // simply not rendering.
+  if (typeof Chart === 'undefined') {
+    canvasEl.style.display = 'none';
+    fallback.style.display = 'block';
+    fallback.textContent = 'Chart library failed to load — check your connection and refresh.';
+    return;
+  }
+  canvasEl.style.display = '';
+  fallback.style.display = 'none';
+
   const sends = rows.filter(r => (r.status === 'Send' || r.status === 'Redpoint') && r.date);
   const byWeek = {};
   sends.forEach(r => {
@@ -600,9 +619,8 @@ function renderProgressChart(rows){
     }
   });
   const weeks = Object.keys(byWeek).sort();
-  const ctx = document.getElementById('progress-chart');
   if (progressChart) progressChart.destroy();
-  progressChart = new Chart(ctx, {
+  progressChart = new Chart(canvasEl, {
     type: 'line',
     data: {
       labels: weeks,
