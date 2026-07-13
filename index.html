@@ -53,7 +53,7 @@
   nav.tabs button{
     font-family:'Inter',sans-serif; font-weight:600; font-size:13px;
     background:transparent; color:var(--chalk-500); border:none; padding:8px 16px;
-    border-radius:999px; cursor:pointer; transition:all .15s ease;
+    border-radius:999px; cursor:pointer; transition:all .15s ease; white-space:nowrap;
   }
   nav.tabs button.active{background:var(--tape-flash); color:var(--stone-950);}
   nav.tabs button:not(.active):hover{color:var(--chalk-100);}
@@ -130,9 +130,10 @@
   #log-feedback{margin-top:14px; font-size:13px; color:var(--tape-flash); min-height:18px;}
 
   /* Recent log table */
+  .table-scroll{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch;}
   table.log-table{width:100%; border-collapse:collapse; font-size:13.5px;}
-  table.log-table th{text-align:left; color:var(--chalk-500); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; padding:8px 10px; border-bottom:1px solid var(--stone-700);}
-  table.log-table td{padding:9px 10px; border-bottom:1px solid var(--stone-800);}
+  table.log-table th{text-align:left; color:var(--chalk-500); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; padding:8px 10px; border-bottom:1px solid var(--stone-700); white-space:nowrap;}
+  table.log-table td{padding:9px 10px; border-bottom:1px solid var(--stone-800); white-space:nowrap;}
   .grade-pill{font-family:'JetBrains Mono',monospace; font-weight:700; padding:2px 8px; border-radius:20px; font-size:12px; display:inline-block;}
 
   /* Goals */
@@ -140,6 +141,15 @@
   .goal-progress-track{flex:1; height:14px; background:var(--stone-950); border-radius:20px; overflow:hidden; border:1px solid var(--stone-700);}
   .goal-progress-fill{height:100%; background:linear-gradient(90deg,var(--tape-green),var(--tape-flash)); border-radius:20px 0 0 20px; transition:width .5s ease;}
   .goal-form{display:flex; gap:10px; align-items:end; margin-top:16px; flex-wrap:wrap;}
+
+  /* Plan tab: current-week climb grid */
+  .plan-climb-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:16px;}
+  .plan-climb-cell{display:flex; flex-direction:column; align-items:center; gap:6px;}
+  .plan-climb-cell .climb-label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--chalk-500); font-weight:600;}
+  .plan-climb-cell .grade-pill{width:100%; text-align:center; font-size:14px; padding:8px 10px;}
+  @media (max-width:480px){
+    .plan-climb-grid{grid-template-columns:repeat(2, 1fr);}
+  }
 
 
   /* Lock screen */
@@ -176,7 +186,14 @@
   @media (max-width:720px){
     .stat-row{grid-template-columns:repeat(2,1fr);}
     form#log-form{grid-template-columns:1fr;}
-    nav.tabs button{padding:8px 12px; font-size:12px;}
+    table.log-table{font-size:12px;}
+    table.log-table th, table.log-table td{padding:7px 8px;}
+  }
+
+  @media (max-width:520px){
+    header.app-header{flex-direction:column; align-items:stretch; gap:12px; padding:14px 16px;}
+    nav.tabs{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; justify-content:flex-start;}
+    nav.tabs button{padding:8px 14px; font-size:12px;}
   }
 </style>
 </head>
@@ -261,10 +278,12 @@
     <div class="panel">
       <h2>Recent Sessions</h2>
       <p class="panel-sub">Last 10 entries from your log.</p>
-      <table class="log-table">
-        <thead><tr><th>Date</th><th>Grade</th><th>Status</th><th>Climber</th></tr></thead>
-        <tbody id="recent-table-body"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="log-table">
+          <thead><tr><th>Date</th><th>Grade</th><th>Status</th><th>Climber</th></tr></thead>
+          <tbody id="recent-table-body"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -282,10 +301,12 @@
     <div class="panel">
       <h2>Full Plan</h2>
       <p class="panel-sub">Every training week in your plan sheet.</p>
-      <table class="log-table">
-        <thead><tr><th>Week</th><th>Starts</th><th>Climb 1</th><th>Climb 2</th><th>Climb 3</th><th>Climb 4</th><th>First Climber</th></tr></thead>
-        <tbody id="plan-table-body"></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="log-table">
+          <thead><tr><th>Week</th><th>Starts</th><th>Climb 1</th><th>Climb 2</th><th>Climb 3</th><th>Climb 4</th></tr></thead>
+          <tbody id="plan-table-body"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -704,6 +725,17 @@ async function renderGoals(){
 }
 
 /* ---------- Plan ---------- */
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function formatDateNoYear(dateStr){
+  // Plan dates come in as yyyy-MM-dd; parse the parts directly rather than via
+  // `new Date()` so this can't drift a day from a timezone offset.
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr || '');
+  if (!m) return dateStr || '—';
+  const month = MONTH_ABBR[parseInt(m[2], 10) - 1];
+  const day = parseInt(m[3], 10);
+  return month ? `${month} ${day}` : dateStr;
+}
+
 async function renderPlan(){
   const plan = await Store.fetchPlan();
   const sorted = [...plan]
@@ -732,15 +764,15 @@ async function renderPlan(){
       : 'No plan loaded yet — add rows to your plan sheet.';
     currentBody.innerHTML = '';
   } else {
-    currentSub.textContent = `Week ${current.week} · starts ${current.date}`;
+    currentSub.textContent = `Week ${current.week} · starts ${formatDateNoYear(current.date)}`;
     const climbs = [current.climb1, current.climb2, current.climb3, current.climb4];
     currentBody.innerHTML = `
-      <div style="display:flex; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+      <div class="plan-climb-grid">
         ${climbs.map((g, i) => g ? `
-          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-            <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--chalk-500); font-weight:600;">Climb ${i + 1}</div>
-            <span class="grade-pill mono" style="background:${gradeColor(g)}; color:#17161A; font-size:14px; padding:6px 14px;">${g}</span>
-          </div>` : '').join('')}
+          <div class="plan-climb-cell">
+            <div class="climb-label">Climb ${i + 1}</div>
+            <span class="grade-pill mono" style="background:${gradeColor(g)}; color:#17161A;">${g}</span>
+          </div>` : '<div></div>').join('')}
       </div>
       <div style="font-size:13.5px; color:var(--chalk-300);">
         First climb picked by <strong style="color:var(--tape-flash);">${current.firstClimber || '—'}</strong> this week.
@@ -752,14 +784,13 @@ async function renderPlan(){
   tbody.innerHTML = sorted.map(row => `
     <tr style="${current && row.week === current.week ? 'background:rgba(200,255,77,0.08);' : ''}">
       <td class="mono">${row.week}</td>
-      <td class="mono">${row.date}</td>
+      <td class="mono">${formatDateNoYear(row.date)}</td>
       <td>${row.climb1 || '—'}</td>
       <td>${row.climb2 || '—'}</td>
       <td>${row.climb3 || '—'}</td>
       <td>${row.climb4 || '—'}</td>
-      <td>${row.firstClimber || '—'}</td>
     </tr>
-  `).join('') || '<tr><td colspan="7" style="color:var(--chalk-500); text-align:center; padding:20px;">No plan rows yet.</td></tr>';
+  `).join('') || '<tr><td colspan="6" style="color:var(--chalk-500); text-align:center; padding:20px;">No plan rows yet.</td></tr>';
 }
 
 /* ---------- Access lock ---------- */
