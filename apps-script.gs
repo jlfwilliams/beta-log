@@ -68,7 +68,8 @@ function readSheetAsObjects_(sheet) {
         // timezone offset is applied, which breaks date-based sorting/display on the
         // client. Normalize it back to a plain yyyy-MM-dd string here at the source.
         if (cell instanceof Date) {
-          cell = Utilities.formatDate(cell, tz, 'yyyy-MM-dd');
+          const pattern = (h === 'Date') ? 'MM/dd/yyyy' : 'yyyy-MM-dd';
+          cell = Utilities.formatDate(cell, tz, pattern);
         }
         obj[String(h).charAt(0).toLowerCase() + String(h).slice(1)] = cell;
       });
