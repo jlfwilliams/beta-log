@@ -1,4 +1,3 @@
-/* ---------- Log form ---------- */
 const gradeSel = document.getElementById('f-grade');
 populateGradeSelect(gradeSel);
 document.getElementById('f-date').valueAsDate = new Date();
@@ -27,7 +26,6 @@ document.getElementById('log-form').addEventListener('submit', async (e)=>{
   const entry = {
     date: document.getElementById('f-date').value,
     grade,
-    gradeValue: gradeIndex(grade),
     status: selectedStatus,
     climber: selectedClimber
   };

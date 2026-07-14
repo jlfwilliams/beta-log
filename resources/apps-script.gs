@@ -23,7 +23,8 @@ function getSheet_() {
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(['Timestamp','Date','Grade','GradeValue','Status','Climber']);
+
+    sheet.appendRow(['Timestamp','Date','Grade','Status','Climber']);
   }
   return sheet;
 }
@@ -118,7 +119,6 @@ function doPost(e) {
       new Date(),
       body.date || '',
       body.grade || '',
-      body.gradeValue !== undefined ? body.gradeValue : '',
       body.status || '',
       body.climber || ''
     ]);

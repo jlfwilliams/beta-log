@@ -36,17 +36,20 @@ const Store = {
   },
 
   async fetchAll(){
-    if (!isConfigured()) return this.getLocal();
+    if (!isConfigured()) return this.getLocal().map(r => ({ ...r, gradeValue: gradeIndex(r.grade) }));
     try {
       const res = await fetch(APPS_SCRIPT_URL, { method:'GET' });
       const json = await res.json();
+      // GradeValue isn't stored anywhere — it's just an index into GRADES,
+      // so it's cheaper and less error-prone to derive it here than to keep
+      // a redundant numeric column in the sheet in sync with the grade text.
       if (json.ok) return json.data.map(r => ({
         date: r.date, grade: r.grade,
-        gradeValue: Number(r.gradeValue), status: r.status,
+        gradeValue: gradeIndex(r.grade), status: r.status,
         climber: r.climber
       }));
     } catch(e){ console.warn('Sheet fetch failed, falling back to local.', e); }
-    return this.getLocal();
+    return this.getLocal().map(r => ({ ...r, gradeValue: gradeIndex(r.grade) }));
   },
 
   async add(entry){
@@ -59,9 +62,12 @@ const Store = {
     try {
       // NOTE: no explicit Content-Type header — this avoids a CORS preflight
       // that Apps Script's doPost doesn't handle. Body is still JSON text.
+      // gradeValue is dropped before sending — the sheet only stores the
+      // grade text, and gradeValue is re-derived from it on every read.
+      const { gradeValue, ...toSend } = entry;
       const res = await fetch(APPS_SCRIPT_URL, {
         method:'POST',
-        body: JSON.stringify(entry)
+        body: JSON.stringify(toSend)
       });
       const json = await res.json();
       return json;

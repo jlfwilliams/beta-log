@@ -182,6 +182,14 @@
   }
   #app-shell.hidden{display:none;}
 
+  /* Footer */
+  footer.app-footer{
+    max-width:1080px; margin:0 auto; padding:18px 24px 32px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    color:var(--chalk-500); font-size:12px; border-top:1px solid var(--stone-700);
+  }
+  footer.app-footer .version{font-family:'JetBrains Mono',monospace; color:var(--chalk-500);}
+
   canvas{max-width:100%;}
 
   @media (max-width:720px){
@@ -350,6 +358,12 @@
 
 
 </main>
+
+<footer class="app-footer">
+  <span>© <span id="footer-year"></span> Beta Log · Built by Cubes</span>
+  <span class="version mono" id="footer-version"></span>
+</footer>
+
 </div>
 
 <script src="src/config.js"></script>
@@ -360,5 +374,6 @@
 <script src="src/dashboard.js"></script>
 <script src="src/plan.js"></script>
 <script src="src/lock.js"></script>
+<script src="src/footer.js"></script>
 </body>
 </html>
