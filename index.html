@@ -6,12 +6,12 @@
 <title>Beta Log — Sport Climbing Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="icon" href="favicon-32x32.png" sizes="32x32" type="image/png">
-<link rel="icon" href="favicon-16x16.png" sizes="16x16" type="image/png">
-<link rel="alternate icon" href="favicon.ico">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script src="chart.umd.min.js"></script>
+<link rel="icon" href="resources/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="resources/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="resources/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="alternate icon" href="resources/favicon.ico">
+<link rel="apple-touch-icon" href="resources/apple-touch-icon.png">
+<script src="src/chart.umd.min.js"></script>
 <style>
   :root{
     --stone-950:#17161A;
@@ -240,7 +240,7 @@
   <!-- DASHBOARD -->
   <section class="view active" id="view-dashboard">
     <h1 class="page-title">Dashboard</h1>
-    <p class="page-sub">Your progress, pulled straight from your climb log.</p>
+    <p class="page-sub">Track progress, visualize results.</p>
 
     <div class="status-toggle" id="dashboard-climber-toggle" style="max-width:320px; margin-bottom:24px;">
       <button type="button" data-climber="All" class="selected">All</button>
@@ -295,7 +295,7 @@
   <!-- PLAN -->
   <section class="view" id="view-plan">
     <h1 class="page-title">Training Plan</h1>
-    <p class="page-sub">Pulled from your plan sheet — the current training week is picked out automatically.</p>
+    <p class="page-sub">Pulled from the plan sheet. The current training week is picked out automatically.</p>
 
     <div class="panel">
       <h2>This Week</h2>
@@ -305,7 +305,7 @@
 
     <div class="panel">
       <h2>Full Plan</h2>
-      <p class="panel-sub">Every training week in your plan sheet.</p>
+      <p class="panel-sub">Every training week in the plan sheet.</p>
       <div class="table-scroll">
         <table class="log-table">
           <thead><tr><th>Week</th><th>Starts</th><th>Climb 1</th><th>Climb 2</th><th>Climb 3</th><th>Climb 4</th></tr></thead>
@@ -318,7 +318,7 @@
   <!-- LOG -->
   <section class="view" id="view-log">
     <h1 class="page-title">Log a Climb</h1>
-    <p class="page-sub">One entry per attempt or send. It syncs straight to your sheet.</p>
+    <p class="page-sub">One entry per attempt or send. Syncs straight to sheet.</p>
 
     <div class="panel">
       <form id="log-form">
