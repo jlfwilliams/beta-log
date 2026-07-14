@@ -1,0 +1,73 @@
+/* ---------- Storage layer (localStorage + optional Apps Script sync) ---------- */
+const Store = {
+  key: 'betalog_climbs',
+
+  getLocal(){ return JSON.parse(localStorage.getItem(this.key) || '[]'); },
+  setLocal(rows){ localStorage.setItem(this.key, JSON.stringify(rows)); },
+
+  // Goals are set directly in the "goals" sheet tab now, not through the app —
+  // this only ever reads them. Just the target YDS grade text is stored there
+  // (e.g. "5.11a"); the numeric index used for comparisons is derived here.
+  // If multiple rows exist, the most recently added one (the last row) is
+  // treated as the current goal.
+  async fetchGoal(){
+    if (!isConfigured()) return null;
+    try {
+      const res = await fetch(APPS_SCRIPT_URL + '?type=goals', { method:'GET' });
+      const json = await res.json();
+      if (json.ok && json.data.length){
+        const g = json.data[json.data.length - 1];
+        const idx = gradeIndex(g.grade);
+        if (idx === -1) return null;
+        return { grade: g.grade, gradeValue: idx };
+      }
+    } catch(e){ console.warn('Goal fetch failed.', e); }
+    return null;
+  },
+
+  async fetchPlan(){
+    if (!isConfigured()) return [];
+    try {
+      const res = await fetch(APPS_SCRIPT_URL + '?type=plan', { method:'GET' });
+      const json = await res.json();
+      if (json.ok) return json.data;
+    } catch(e){ console.warn('Plan fetch failed.', e); }
+    return [];
+  },
+
+  async fetchAll(){
+    if (!isConfigured()) return this.getLocal();
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, { method:'GET' });
+      const json = await res.json();
+      if (json.ok) return json.data.map(r => ({
+        date: r.date, grade: r.grade,
+        gradeValue: Number(r.gradeValue), status: r.status,
+        climber: r.climber
+      }));
+    } catch(e){ console.warn('Sheet fetch failed, falling back to local.', e); }
+    return this.getLocal();
+  },
+
+  async add(entry){
+    // always cache locally so the UI stays responsive / works offline
+    const rows = this.getLocal();
+    rows.push(entry);
+    this.setLocal(rows);
+
+    if (!isConfigured()) return { ok:true, local:true };
+    try {
+      // NOTE: no explicit Content-Type header — this avoids a CORS preflight
+      // that Apps Script's doPost doesn't handle. Body is still JSON text.
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method:'POST',
+        body: JSON.stringify(entry)
+      });
+      const json = await res.json();
+      return json;
+    } catch(e){
+      console.warn('Sheet sync failed, entry kept locally only.', e);
+      return { ok:false, local:true, error:String(e) };
+    }
+  }
+};

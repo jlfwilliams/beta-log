@@ -2,9 +2,10 @@
  * Beta Log — Apps Script backend
  *
  * Setup:
- * 1. Create a Google Sheet. This script will auto-create a "log" tab (climbs) and a
- *    "goals" tab the first time it runs, with the right headers, so you don't need to
- *    set those up by hand.
+ * 1. Create a Google Sheet. This script will auto-create "log" (climbs), "goals",
+ *    and "plan" tabs the first time it runs, with the right headers, so you don't
+ *    need to set those up by hand. The "goals" and "plan" tabs are meant to be
+ *    filled in directly by you — the app only ever reads them.
  * 2. In the Sheet, go to Extensions > Apps Script.
  * 3. Delete any starter code and paste this whole file in.
  * 4. Click Deploy > New deployment > type "Web app".
@@ -32,7 +33,7 @@ function getGoalsSheet_() {
   let sheet = ss.getSheetByName(GOALS_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(GOALS_SHEET_NAME);
-    sheet.appendRow(['Timestamp','Grade','GradeValue']);
+    sheet.appendRow(['Grade']);
   }
   return sheet;
 }
@@ -111,16 +112,6 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
-
-    if (body.type === 'goal') {
-      const goalsSheet = getGoalsSheet_();
-      goalsSheet.appendRow([
-        new Date(),
-        body.grade || '',
-        body.gradeValue !== undefined ? body.gradeValue : ''
-      ]);
-      return jsonOut_({ ok: true });
-    }
 
     const sheet = getSheet_();
     sheet.appendRow([
