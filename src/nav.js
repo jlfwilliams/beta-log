@@ -1,4 +1,3 @@
-/* ---------- Navigation ---------- */
 document.querySelectorAll('nav.tabs button').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));

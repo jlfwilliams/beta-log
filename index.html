@@ -1,379 +1,857 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beta Log — Sport Climbing Tracker</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="icon" href="resources/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="resources/favicon-32x32.png" sizes="32x32" type="image/png">
-<link rel="icon" href="resources/favicon-16x16.png" sizes="16x16" type="image/png">
-<link rel="alternate icon" href="resources/favicon.ico">
-<link rel="apple-touch-icon" href="resources/apple-touch-icon.png">
-<script src="src/chart.umd.min.js"></script>
-<style>
-  :root{
-    --stone-950:#17161A;
-    --stone-900:#1D1B20;
-    --stone-800:#2B282C;
-    --stone-700:#3A3639;
-    --chalk-100:#EDEAE2;
-    --chalk-300:#C7C2B8;
-    --chalk-500:#8A857D;
-    --tape-green:#6FCF97;
-    --tape-flash:#C8FF4D;
-    --tape-yellow:#FFD166;
-    --tape-orange:#FF8C42;
-    --tape-red:#FF4B3E;
-    --radius-s:4px;
-    --radius-m:8px;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--stone-950);
-    background-image:
-      radial-gradient(circle at 12% 8%, rgba(200,255,77,0.05), transparent 40%),
-      radial-gradient(circle at 90% 85%, rgba(255,75,62,0.05), transparent 40%);
-    color:var(--chalk-100);
-    font-family:'Inter',system-ui,sans-serif;
-    min-height:100vh;
-  }
-  .mono{font-family:'JetBrains Mono',monospace;}
-  .display{font-family:'Bebas Neue',sans-serif; letter-spacing:0.02em;}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beta Log — Sport Climbing Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <link rel="icon" href="resources/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="resources/favicon-32x32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="resources/favicon-16x16.png" sizes="16x16" type="image/png">
+  <link rel="alternate icon" href="resources/favicon.ico">
+  <link rel="apple-touch-icon" href="resources/apple-touch-icon.png">
+  <style>
+    :root {
+      --stone-950: #17161A;
+      --stone-900: #1D1B20;
+      --stone-800: #2B282C;
+      --stone-700: #3A3639;
+      --chalk-100: #EDEAE2;
+      --chalk-300: #C7C2B8;
+      --chalk-500: #8A857D;
+      --tape-green: #6FCF97;
+      --tape-flash: #C8FF4D;
+      --tape-yellow: #FFD166;
+      --tape-orange: #FF8C42;
+      --tape-red: #FF4B3E;
+      --radius-s: 4px;
+      --radius-m: 8px;
+    }
 
-  /* Header */
-  header.app-header{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:18px 28px; border-bottom:1px solid var(--stone-700);
-    position:sticky; top:0; background:rgba(23,22,26,0.92); backdrop-filter:blur(6px);
-    z-index:20;
-  }
-  .brand{display:flex; align-items:center; gap:10px;}
-  .brand-mark{width:22px; height:22px; flex-shrink:0;}
-  .brand-name{font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.06em; color:var(--chalk-100);}
-  .brand-name span{color:var(--tape-flash);}
-  nav.tabs{display:flex; gap:6px; background:var(--stone-900); border-radius:999px; padding:4px; border:1px solid var(--stone-700);}
-  nav.tabs button{
-    flex:1 1 0;
-    font-family:'Inter',sans-serif; font-weight:600; font-size:13px;
-    background:transparent; color:var(--chalk-500); border:none; padding:8px 16px;
-    border-radius:999px; cursor:pointer; transition:all .15s ease; white-space:nowrap;
-    text-align:center;
-  }
-  nav.tabs button.active{background:var(--tape-flash); color:var(--stone-950);}
-  nav.tabs button:not(.active):hover{color:var(--chalk-100);}
+    * {
+      box-sizing: border-box;
+    }
 
-  main{max-width:1080px; margin:0 auto; padding:32px 24px 80px;}
-  .view{display:none;}
-  .view.active{display:block; animation:fadeUp .35s ease;}
-  @keyframes fadeUp{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
 
-  h1.page-title{font-family:'Bebas Neue',sans-serif; font-size:38px; letter-spacing:0.03em; margin:0 0 4px;}
-  p.page-sub{color:var(--chalk-500); margin:0 0 28px; font-size:14.5px;}
+    body {
+      background: var(--stone-950);
+      background-image:
+        radial-gradient(circle at 12% 8%, rgba(200, 255, 77, 0.05), transparent 40%),
+        radial-gradient(circle at 90% 85%, rgba(255, 75, 62, 0.05), transparent 40%);
+      color: var(--chalk-100);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+    }
 
-  /* Stat cards */
-  .stat-row{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:32px;}
-  .stat-card{background:var(--stone-900); border:1px solid var(--stone-700); border-radius:var(--radius-m); padding:16px 18px;}
-  .stat-card .stat-label{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--chalk-500); font-weight:600;}
-  .stat-card .stat-value{font-family:'Bebas Neue',sans-serif; font-size:32px; margin-top:6px; color:var(--chalk-100);}
-  .stat-card .stat-value.accent{color:var(--tape-flash);}
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
 
-  /* Panels */
-  .panel{background:var(--stone-900); border:1px solid var(--stone-700); border-radius:var(--radius-m); padding:22px 24px; margin-bottom:24px;}
-  .panel h2{font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:0.03em; margin:0 0 4px;}
-  .panel .panel-sub{color:var(--chalk-500); font-size:13px; margin:0 0 18px;}
+    .display {
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 0.02em;
+    }
 
-  /* Pyramid (signature element) */
-  .pyramid-wrap{display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0 4px;}
-  .pyramid-row{display:flex; align-items:center; gap:12px; width:100%;}
-  .pyramid-row .grade-label{width:56px; text-align:right; font-size:12px; color:var(--chalk-300); flex-shrink:0;}
-  .pyramid-row .bar-track{flex:1; display:flex; justify-content:center;}
-  .pyramid-row .bar{
-    height:22px; border-radius:3px; min-width:22px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:11px; font-weight:700; color:var(--stone-950);
-    transition:width .4s ease;
-  }
-  .pyramid-empty{color:var(--chalk-500); font-size:13px; text-align:center; padding:24px 0;}
+    /* Header */
+    header.app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--stone-700);
+      position: sticky;
+      top: 0;
+      background: rgba(23, 22, 26, 0.92);
+      backdrop-filter: blur(6px);
+      z-index: 20;
+    }
 
-  /* Form */
-  form#log-form{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-  form#log-form .full{grid-column:1/-1;}
-  .field label{display:block; font-size:12px; text-transform:uppercase; letter-spacing:0.06em; color:var(--chalk-500); font-weight:600; margin-bottom:6px;}
-  .field input, .field select, .field textarea{
-    width:100%; min-width:0; background:var(--stone-950); border:1px solid var(--stone-700); color:var(--chalk-100);
-    padding:10px 12px; border-radius:var(--radius-s); font-family:'Inter',sans-serif; font-size:14px;
-  }
-  .field select{cursor:pointer;}
-  .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--tape-flash); outline-offset:1px;}
-  /* Date inputs render with a browser-controlled intrinsic width that can overflow
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 0.06em;
+      color: var(--chalk-100);
+    }
+
+    .brand-name span {
+      color: var(--tape-flash);
+    }
+
+    nav.tabs {
+      display: flex;
+      gap: 6px;
+      background: var(--stone-900);
+      border-radius: 999px;
+      padding: 4px;
+      border: 1px solid var(--stone-700);
+    }
+
+    nav.tabs button {
+      flex: 1 1 0;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      background: transparent;
+      color: var(--chalk-500);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all .15s ease;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    nav.tabs button.active {
+      background: var(--tape-flash);
+      color: var(--stone-950);
+    }
+
+    nav.tabs button:not(.active):hover {
+      color: var(--chalk-100);
+    }
+
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+      animation: fadeUp .35s ease;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1.page-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 38px;
+      letter-spacing: 0.03em;
+      margin: 0 0 4px;
+    }
+
+    p.page-sub {
+      color: var(--chalk-500);
+      margin: 0 0 28px;
+      font-size: 14.5px;
+    }
+
+    /* Stat cards */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--stone-900);
+      border: 1px solid var(--stone-700);
+      border-radius: var(--radius-m);
+      padding: 16px 18px;
+    }
+
+    .stat-card .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--chalk-500);
+      font-weight: 600;
+    }
+
+    .stat-card .stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      margin-top: 6px;
+      color: var(--chalk-100);
+    }
+
+    .stat-card .stat-value.accent {
+      color: var(--tape-flash);
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--stone-900);
+      border: 1px solid var(--stone-700);
+      border-radius: var(--radius-m);
+      padding: 22px 24px;
+      margin-bottom: 24px;
+    }
+
+    .panel h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 0.03em;
+      margin: 0 0 4px;
+    }
+
+    .panel .panel-sub {
+      color: var(--chalk-500);
+      font-size: 13px;
+      margin: 0 0 18px;
+    }
+
+    /* Pyramid (signature element) */
+    .pyramid-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 0 4px;
+    }
+
+    .pyramid-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .pyramid-row .grade-label {
+      width: 56px;
+      text-align: right;
+      font-size: 12px;
+      color: var(--chalk-300);
+      flex-shrink: 0;
+    }
+
+    .pyramid-row .bar-track {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .pyramid-row .bar {
+      height: 22px;
+      border-radius: 3px;
+      min-width: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--stone-950);
+      transition: width .4s ease;
+    }
+
+    .pyramid-empty {
+      color: var(--chalk-500);
+      font-size: 13px;
+      text-align: center;
+      padding: 24px 0;
+    }
+
+    /* Form */
+    form#log-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    form#log-form .full {
+      grid-column: 1/-1;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--chalk-500);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-width: 0;
+      background: var(--stone-950);
+      border: 1px solid var(--stone-700);
+      color: var(--chalk-100);
+      padding: 10px 12px;
+      border-radius: var(--radius-s);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+    }
+
+    .field select {
+      cursor: pointer;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: 2px solid var(--tape-flash);
+      outline-offset: 1px;
+    }
+
+    /* Date inputs render with a browser-controlled intrinsic width that can overflow
      a narrow grid column on mobile, and iOS auto-zooms on focus for inputs under 16px.
      Force it to respect the container and stay at 16px so it behaves like the rest of the form. */
-  .field input[type="date"]{
-    width:100%; min-width:0; -webkit-appearance:none; appearance:none; font-size:16px;
-  }
-  .field input[type="date"]::-webkit-date-and-time-value{ text-align:left; }
-  .status-toggle{display:flex; gap:8px;}
-  .status-toggle button{
-    flex:1; padding:10px; border-radius:var(--radius-s); border:1px solid var(--stone-700);
-    background:var(--stone-950); color:var(--chalk-500); font-weight:700; font-size:12.5px;
-    cursor:pointer; text-transform:uppercase; letter-spacing:0.04em;
-  }
-  .status-toggle button.selected[data-status="Attempt"]{background:var(--tape-red); color:var(--stone-950); border-color:var(--tape-red);}
-  .status-toggle button.selected[data-status="Send"]{background:var(--tape-green); color:var(--stone-950); border-color:var(--tape-green);}
-  .status-toggle button.selected[data-status="Redpoint"]{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
-  #climber-toggle button.selected{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
-  #dashboard-climber-toggle button.selected{background:var(--tape-flash); color:var(--stone-950); border-color:var(--tape-flash);}
+    .field input[type="date"] {
+      width: 100%;
+      min-width: 0;
+      -webkit-appearance: none;
+      appearance: none;
+      font-size: 16px;
+    }
 
-  .btn-primary{
-    background:var(--tape-flash); color:var(--stone-950); border:none; padding:12px 20px;
-    border-radius:var(--radius-s); font-weight:700; font-size:14px; cursor:pointer; letter-spacing:0.02em;
-  }
-  .btn-primary:hover{filter:brightness(1.08);}
-  .btn-ghost{background:transparent; border:1px solid var(--stone-700); color:var(--chalk-300); padding:12px 20px; border-radius:var(--radius-s); font-weight:600; font-size:13px; cursor:pointer;}
+    .field input[type="date"]::-webkit-date-and-time-value {
+      text-align: left;
+    }
 
-  #log-feedback{margin-top:14px; font-size:13px; color:var(--tape-flash); min-height:18px;}
+    .status-toggle {
+      display: flex;
+      gap: 8px;
+    }
 
-  /* Recent log table */
-  .table-scroll{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch;}
-  table.log-table{width:100%; border-collapse:collapse; font-size:13.5px;}
-  table.log-table th{text-align:left; color:var(--chalk-500); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; padding:8px 10px; border-bottom:1px solid var(--stone-700); white-space:nowrap;}
-  table.log-table td{padding:9px 10px; border-bottom:1px solid var(--stone-800); white-space:nowrap;}
-  .grade-pill{font-family:'JetBrains Mono',monospace; font-weight:700; padding:2px 8px; border-radius:20px; font-size:12px; display:inline-block;}
+    .status-toggle button {
+      flex: 1;
+      padding: 10px;
+      border-radius: var(--radius-s);
+      border: 1px solid var(--stone-700);
+      background: var(--stone-950);
+      color: var(--chalk-500);
+      font-weight: 700;
+      font-size: 12.5px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
 
-  /* Plan tab: current-week climb grid */
-  .plan-climb-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:16px;}
-  .plan-climb-cell{display:flex; flex-direction:column; align-items:center; gap:6px;}
-  .plan-climb-cell .climb-label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--chalk-500); font-weight:600;}
-  .plan-climb-cell .grade-pill{width:100%; text-align:center; font-size:14px; padding:8px 10px;}
-  @media (max-width:480px){
-    .plan-climb-grid{grid-template-columns:repeat(2, 1fr);}
-  }
+    .status-toggle button.selected[data-status="Attempt"] {
+      background: var(--tape-red);
+      color: var(--stone-950);
+      border-color: var(--tape-red);
+    }
+
+    .status-toggle button.selected[data-status="Send"] {
+      background: var(--tape-green);
+      color: var(--stone-950);
+      border-color: var(--tape-green);
+    }
+
+    .status-toggle button.selected[data-status="Redpoint"] {
+      background: var(--tape-flash);
+      color: var(--stone-950);
+      border-color: var(--tape-flash);
+    }
+
+    #climber-toggle button.selected {
+      background: var(--tape-flash);
+      color: var(--stone-950);
+      border-color: var(--tape-flash);
+    }
+
+    #dashboard-climber-toggle button.selected {
+      background: var(--tape-flash);
+      color: var(--stone-950);
+      border-color: var(--tape-flash);
+    }
+
+    .btn-primary {
+      background: var(--tape-flash);
+      color: var(--stone-950);
+      border: none;
+      padding: 12px 20px;
+      border-radius: var(--radius-s);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--stone-700);
+      color: var(--chalk-300);
+      padding: 12px 20px;
+      border-radius: var(--radius-s);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    #log-feedback {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--tape-flash);
+      min-height: 18px;
+    }
+
+    /* Recent log table */
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table.log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+
+    table.log-table th {
+      text-align: left;
+      color: var(--chalk-500);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--stone-700);
+      white-space: nowrap;
+    }
+
+    table.log-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--stone-800);
+      white-space: nowrap;
+    }
+
+    .grade-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      display: inline-block;
+    }
+
+    /* Plan tab: current-week climb grid */
+    .plan-climb-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .plan-climb-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .plan-climb-cell .climb-label {
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--chalk-500);
+      font-weight: 600;
+    }
+
+    .plan-climb-cell .grade-pill {
+      width: 100%;
+      text-align: center;
+      font-size: 14px;
+      padding: 8px 10px;
+    }
+
+    @media (max-width:480px) {
+      .plan-climb-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
 
 
-  /* Lock screen */
-  #lock-screen{
-    position:fixed; inset:0; z-index:100; background:var(--stone-950);
-    display:flex; align-items:center; justify-content:center;
-    background-image:
-      radial-gradient(circle at 12% 8%, rgba(200,255,77,0.06), transparent 40%),
-      radial-gradient(circle at 90% 85%, rgba(255,75,62,0.06), transparent 40%);
-  }
-  #lock-screen.hidden{display:none;}
-  .lock-card{width:100%; max-width:340px; padding:0 20px; text-align:center;}
-  .lock-card .brand-mark{width:32px; height:32px; margin-bottom:14px;}
-  .lock-card h1{font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:0.04em; margin:0 0 6px;}
-  .lock-card p{color:var(--chalk-500); font-size:13.5px; margin:0 0 22px;}
-  .lock-card input{
-    width:100%; background:var(--stone-900); border:1px solid var(--stone-700); color:var(--chalk-100);
-    padding:12px 14px; border-radius:var(--radius-s); font-family:'JetBrains Mono',monospace; font-size:15px;
-    text-align:center; letter-spacing:0.1em; margin-bottom:12px;
-  }
-  .lock-card input:focus{outline:2px solid var(--tape-flash); outline-offset:1px;}
-  .lock-card .btn-primary{width:100%;}
-  #lock-error{color:var(--tape-red); font-size:12.5px; min-height:18px; margin-top:12px;}
-  .lock-shake{animation:shake .3s ease;}
-  @keyframes shake{
-    0%,100%{transform:translateX(0);}
-    25%{transform:translateX(-6px);}
-    75%{transform:translateX(6px);}
-  }
-  #app-shell.hidden{display:none;}
+    /* Lock screen */
+    #lock-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: var(--stone-950);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image:
+        radial-gradient(circle at 12% 8%, rgba(200, 255, 77, 0.06), transparent 40%),
+        radial-gradient(circle at 90% 85%, rgba(255, 75, 62, 0.06), transparent 40%);
+    }
 
-  /* Footer */
-  footer.app-footer{
-    max-width:1080px; margin:0 auto; padding:18px 24px 32px;
-    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
-    color:var(--chalk-500); font-size:12px; border-top:1px solid var(--stone-700);
-  }
-  footer.app-footer .version{font-family:'JetBrains Mono',monospace; color:var(--chalk-500);}
+    #lock-screen.hidden {
+      display: none;
+    }
 
-  canvas{max-width:100%;}
+    .lock-card {
+      width: 100%;
+      max-width: 340px;
+      padding: 0 20px;
+      text-align: center;
+    }
 
-  @media (max-width:720px){
-    .stat-row{grid-template-columns:repeat(2,1fr);}
-    form#log-form{grid-template-columns:1fr;}
-    table.log-table{font-size:12px;}
-    table.log-table th, table.log-table td{padding:7px 8px;}
-  }
+    .lock-card .brand-mark {
+      width: 32px;
+      height: 32px;
+      margin-bottom: 14px;
+    }
 
-  @media (max-width:520px){
-    header.app-header{flex-direction:column; align-items:stretch; gap:12px; padding:14px 16px;}
-    nav.tabs{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; justify-content:flex-start;}
-    nav.tabs button{padding:8px 14px; font-size:12px;}
-  }
-</style>
+    .lock-card h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.04em;
+      margin: 0 0 6px;
+    }
+
+    .lock-card p {
+      color: var(--chalk-500);
+      font-size: 13.5px;
+      margin: 0 0 22px;
+    }
+
+    .lock-card input {
+      width: 100%;
+      background: var(--stone-900);
+      border: 1px solid var(--stone-700);
+      color: var(--chalk-100);
+      padding: 12px 14px;
+      border-radius: var(--radius-s);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      text-align: center;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    .lock-card input:focus {
+      outline: 2px solid var(--tape-flash);
+      outline-offset: 1px;
+    }
+
+    .lock-card .btn-primary {
+      width: 100%;
+    }
+
+    #lock-error {
+      color: var(--tape-red);
+      font-size: 12.5px;
+      min-height: 18px;
+      margin-top: 12px;
+    }
+
+    .lock-shake {
+      animation: shake .3s ease;
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-6px);
+      }
+
+      75% {
+        transform: translateX(6px);
+      }
+    }
+
+    #app-shell.hidden {
+      display: none;
+    }
+
+    /* Footer */
+    footer.app-footer {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 18px 24px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--chalk-500);
+      font-size: 12px;
+      border-top: 1px solid var(--stone-700);
+    }
+
+    footer.app-footer .version {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--chalk-500);
+    }
+
+    canvas {
+      max-width: 100%;
+    }
+
+    @media (max-width:720px) {
+      .stat-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      form#log-form {
+        grid-template-columns: 1fr;
+      }
+
+      table.log-table {
+        font-size: 12px;
+      }
+
+      table.log-table th,
+      table.log-table td {
+        padding: 7px 8px;
+      }
+    }
+
+    @media (max-width:520px) {
+      header.app-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 14px 16px;
+      }
+
+      nav.tabs {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        justify-content: flex-start;
+      }
+
+      nav.tabs button {
+        padding: 8px 14px;
+        font-size: 12px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<div id="lock-screen">
-  <div class="lock-card">
-    <svg class="brand-mark" viewBox="0 0 24 24" fill="none" style="margin:0 auto 14px; display:block;">
-      <path d="M2 18L8 8L12 14L16 6L22 18" stroke="#C8FF4D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <h1>BETA<span style="color:var(--tape-flash);">LOG</span></h1>
-    <p>Enter your passphrase to unlock the log.</p>
-    <form id="lock-form">
-      <input type="password" id="lock-input" placeholder="passphrase" autocomplete="off" autofocus>
-      <button type="submit" class="btn-primary">Unlock</button>
-      <div id="lock-error"></div>
-    </form>
-  </div>
-</div>
-
-<div id="app-shell" class="hidden">
-<header class="app-header">
-  <div class="brand">
-    <svg class="brand-mark" viewBox="0 0 24 24" fill="none">
-      <path d="M2 18L8 8L12 14L16 6L22 18" stroke="#C8FF4D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <div class="brand-name">BETA<span>LOG</span></div>
-  </div>
-  <nav class="tabs">
-    <button data-view="dashboard" class="active">Dashboard</button>
-    <button data-view="plan">Plan</button>
-    <button data-view="log">Log Climb</button>
-  </nav>
-</header>
-
-<main>
-
-  <!-- DASHBOARD -->
-  <section class="view active" id="view-dashboard">
-    <h1 class="page-title">Dashboard</h1>
-    <p class="page-sub">Track progress, visualize results.</p>
-
-    <div class="status-toggle" id="dashboard-climber-toggle" style="max-width:320px; margin-bottom:24px;">
-      <button type="button" data-climber="All" class="selected">All</button>
-      <button type="button" data-climber="Parker">Parker</button>
-      <button type="button" data-climber="Finn">Finn</button>
-    </div>
-
-    <div class="stat-row">
-      <div class="stat-card">
-        <div class="stat-label">Total Climbs</div>
-        <div class="stat-value" id="stat-total">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Sends</div>
-        <div class="stat-value" id="stat-sends">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Send Rate</div>
-        <div class="stat-value" id="stat-rate">0%</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Current Max</div>
-        <div class="stat-value accent" id="stat-max">—</div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Grade Pyramid</h2>
-      <p class="panel-sub">Number of sends at each grade, so you can see which grades need more mileage.</p>
-      <div class="pyramid-wrap" id="pyramid-container"></div>
-    </div>
-
-    <div class="panel">
-      <h2>Progress Over Time</h2>
-      <p class="panel-sub">Hardest grade sent per week.</p>
-      <canvas id="progress-chart" height="90"></canvas>
-      <p id="progress-chart-fallback" style="display:none; color:var(--chalk-500); font-size:13px; text-align:center; padding:20px 0; margin:0;"></p>
-    </div>
-
-    <div class="panel">
-      <h2>Recent Sessions</h2>
-      <p class="panel-sub">Last 10 entries from your log.</p>
-      <div class="table-scroll">
-        <table class="log-table">
-          <thead><tr><th>Date</th><th>Grade</th><th>Status</th><th>Climber</th></tr></thead>
-          <tbody id="recent-table-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- PLAN -->
-  <section class="view" id="view-plan">
-    <h1 class="page-title">Training Plan</h1>
-    <p class="page-sub">Pulled from the plan sheet. The current training week is picked out automatically.</p>
-
-    <div class="panel">
-      <h2>This Week</h2>
-      <p class="panel-sub" id="plan-current-sub">Loading...</p>
-      <div id="plan-current-body"></div>
-    </div>
-
-    <div class="panel">
-      <h2>Full Plan</h2>
-      <p class="panel-sub">Every training week in the plan sheet.</p>
-      <div class="table-scroll">
-        <table class="log-table">
-          <thead><tr><th>Week</th><th>Starts</th><th>Climb 1</th><th>Climb 2</th><th>Climb 3</th><th>Climb 4</th></tr></thead>
-          <tbody id="plan-table-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- LOG -->
-  <section class="view" id="view-log">
-    <h1 class="page-title">Log a Climb</h1>
-    <p class="page-sub">One entry per attempt or send. Syncs straight to sheet.</p>
-
-    <div class="panel">
-      <form id="log-form">
-        <div class="field full">
-          <label for="f-date">Date</label>
-          <input type="date" id="f-date" required>
-        </div>
-        <div class="field">
-          <label for="f-grade">Grade</label>
-          <select id="f-grade"></select>
-        </div>
-        <div class="field">
-          <label>Climber</label>
-          <div class="status-toggle" id="climber-toggle">
-            <button type="button" data-climber="Parker" class="selected">Parker</button>
-            <button type="button" data-climber="Finn">Finn</button>
-          </div>
-        </div>
-        <div class="field full">
-          <label>Status</label>
-          <div class="status-toggle" id="status-toggle">
-            <button type="button" data-status="Attempt">Attempt</button>
-            <button type="button" data-status="Send" class="selected">Send</button>
-            <button type="button" data-status="Redpoint">Redpoint</button>
-          </div>
-        </div>
-        <div class="full">
-          <button type="submit" class="btn-primary">Save Climb</button>
-          <span id="log-feedback"></span>
-        </div>
+  <div id="lock-screen">
+    <div class="lock-card">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none" style="margin:0 auto 14px; display:block;">
+        <path d="M2 18L8 8L12 14L16 6L22 18" stroke="#C8FF4D" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" />
+      </svg>
+      <h1>BETA<span style="color:var(--tape-flash);">LOG</span></h1>
+      <p>Enter your passphrase to unlock the log.</p>
+      <form id="lock-form">
+        <input type="password" id="lock-input" placeholder="passphrase" autocomplete="off" autofocus>
+        <button type="submit" class="btn-primary">Unlock</button>
+        <div id="lock-error"></div>
       </form>
     </div>
-  </section>
+  </div>
+
+  <div id="app-shell" class="hidden">
+    <header class="app-header">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" fill="none">
+          <path d="M2 18L8 8L12 14L16 6L22 18" stroke="#C8FF4D" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        <div class="brand-name">BETA<span>LOG</span></div>
+      </div>
+      <nav class="tabs">
+        <button data-view="dashboard" class="active">Dashboard</button>
+        <button data-view="plan">Plan</button>
+        <button data-view="log">Log Climb</button>
+      </nav>
+    </header>
+
+    <main>
+
+      <!-- DASHBOARD -->
+      <section class="view active" id="view-dashboard">
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-sub">Track progress, visualize results.</p>
+
+        <div class="status-toggle" id="dashboard-climber-toggle" style="max-width:320px; margin-bottom:24px;">
+          <button type="button" data-climber="All" class="selected">All</button>
+          <button type="button" data-climber="Parker">Parker</button>
+          <button type="button" data-climber="Finn">Finn</button>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-label">Total Climbs</div>
+            <div class="stat-value" id="stat-total">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Sends</div>
+            <div class="stat-value" id="stat-sends">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Send Rate</div>
+            <div class="stat-value" id="stat-rate">0%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Current Max</div>
+            <div class="stat-value accent" id="stat-max">—</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Grade Pyramid</h2>
+          <p class="panel-sub">Number of sends at each grade, so you can see which grades need more mileage.</p>
+          <div class="pyramid-wrap" id="pyramid-container"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Progress Over Time</h2>
+          <p class="panel-sub">Hardest grade sent per week.</p>
+          <canvas id="progress-chart" height="90"></canvas>
+          <p id="progress-chart-fallback"
+            style="display:none; color:var(--chalk-500); font-size:13px; text-align:center; padding:20px 0; margin:0;">
+          </p>
+        </div>
+
+        <div class="panel">
+          <h2>Recent Sessions</h2>
+          <p class="panel-sub">Last 10 entries from your log.</p>
+          <div class="table-scroll">
+            <table class="log-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Grade</th>
+                  <th>Status</th>
+                  <th>Climber</th>
+                </tr>
+              </thead>
+              <tbody id="recent-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PLAN -->
+      <section class="view" id="view-plan">
+        <h1 class="page-title">Training Plan</h1>
+        <p class="page-sub">Pulled from the plan sheet. The current training week is picked out automatically.</p>
+
+        <div class="panel">
+          <h2>This Week</h2>
+          <p class="panel-sub" id="plan-current-sub">Loading...</p>
+          <div id="plan-current-body"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Full Plan</h2>
+          <p class="panel-sub">Every training week in the plan sheet.</p>
+          <div class="table-scroll">
+            <table class="log-table">
+              <thead>
+                <tr>
+                  <th>Week</th>
+                  <th>Starts</th>
+                  <th>Climb 1</th>
+                  <th>Climb 2</th>
+                  <th>Climb 3</th>
+                  <th>Climb 4</th>
+                </tr>
+              </thead>
+              <tbody id="plan-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOG -->
+      <section class="view" id="view-log">
+        <h1 class="page-title">Log a Climb</h1>
+        <p class="page-sub">One entry per attempt or send. Syncs straight to sheet.</p>
+
+        <div class="panel">
+          <form id="log-form">
+            <div class="field full">
+              <label for="f-date">Date</label>
+              <input type="date" id="f-date" required>
+            </div>
+            <div class="field">
+              <label for="f-grade">Grade</label>
+              <select id="f-grade"></select>
+            </div>
+            <div class="field">
+              <label>Climber</label>
+              <div class="status-toggle" id="climber-toggle">
+                <button type="button" data-climber="Parker" class="selected">Parker</button>
+                <button type="button" data-climber="Finn">Finn</button>
+              </div>
+            </div>
+            <div class="field full">
+              <label>Status</label>
+              <div class="status-toggle" id="status-toggle">
+                <button type="button" data-status="Attempt">Attempt</button>
+                <button type="button" data-status="Send" class="selected">Send</button>
+                <button type="button" data-status="Redpoint">Redpoint</button>
+              </div>
+            </div>
+            <div class="full">
+              <button type="submit" class="btn-primary">Save Climb</button>
+              <span id="log-feedback"></span>
+            </div>
+          </form>
+        </div>
+      </section>
 
 
-</main>
+    </main>
 
-<footer class="app-footer">
-  <span>© <span id="footer-year"></span> Beta Log · Built by Cubes</span>
-  <span class="version mono" id="footer-version"></span>
-</footer>
+    <footer class="app-footer">
+      <span>© <span id="footer-year"></span> Beta Log · Built by Cubes</span>
+      <span class="version mono" id="footer-version"></span>
+    </footer>
 
-</div>
+  </div>
 
-<script src="src/config.js"></script>
-<script src="src/grades.js"></script>
-<script src="src/store.js"></script>
-<script src="src/nav.js"></script>
-<script src="src/log-form.js"></script>
-<script src="src/dashboard.js"></script>
-<script src="src/plan.js"></script>
-<script src="src/lock.js"></script>
-<script src="src/footer.js"></script>
+  <script src="src/chart.umd.min.js" defer></script>
+  <script src="src/config.js" defer></script>
+  <script src="src/grades.js" defer></script>
+  <script src="src/store.js" defer></script>
+  <script src="src/nav.js" defer></script>
+  <script src="src/log-form.js" defer></script>
+  <script src="src/dashboard.js" defer></script>
+  <script src="src/plan.js" defer></script>
+  <script src="src/lock.js" defer></script>
+  <script src="src/footer.js" defer></script>
 </body>
+
 </html>
