@@ -1,17 +1,12 @@
-/* ---------- Storage layer (localStorage + optional Apps Script sync) ---------- */
 const Store = {
   key: 'betalog_climbs',
 
   getLocal(){ return JSON.parse(localStorage.getItem(this.key) || '[]'); },
   setLocal(rows){ localStorage.setItem(this.key, JSON.stringify(rows)); },
 
-  // Goals are set directly in the "goals" sheet tab now, not through the app —
-  // this only ever reads them. Just the target YDS grade text is stored there
-  // (e.g. "5.11a"); the numeric index used for comparisons is derived here.
-  // If multiple rows exist, the most recently added one (the last row) is
+  // If multiple goals exist, the most recently added one (the last row) is
   // treated as the current goal.
   async fetchGoal(){
-    if (!isConfigured()) return null;
     try {
       const res = await fetch(APPS_SCRIPT_URL + '?type=goals', { method:'GET' });
       const json = await res.json();
@@ -26,7 +21,6 @@ const Store = {
   },
 
   async fetchPlan(){
-    if (!isConfigured()) return [];
     try {
       const res = await fetch(APPS_SCRIPT_URL + '?type=plan', { method:'GET' });
       const json = await res.json();
@@ -36,16 +30,15 @@ const Store = {
   },
 
   async fetchAll(){
-    if (!isConfigured()) return this.getLocal().map(r => ({ ...r, gradeValue: gradeIndex(r.grade) }));
     try {
       const res = await fetch(APPS_SCRIPT_URL, { method:'GET' });
       const json = await res.json();
-      // GradeValue isn't stored anywhere — it's just an index into GRADES,
-      // so it's cheaper and less error-prone to derive it here than to keep
-      // a redundant numeric column in the sheet in sync with the grade text.
+
       if (json.ok) return json.data.map(r => ({
-        date: r.date, grade: r.grade,
-        gradeValue: gradeIndex(r.grade), status: r.status,
+        date: r.date,
+        grade: r.grade,
+        gradeValue: gradeIndex(r.grade),
+        status: r.status,
         climber: r.climber
       }));
     } catch(e){ console.warn('Sheet fetch failed, falling back to local.', e); }
@@ -58,7 +51,6 @@ const Store = {
     rows.push(entry);
     this.setLocal(rows);
 
-    if (!isConfigured()) return { ok:true, local:true };
     try {
       // NOTE: no explicit Content-Type header — this avoids a CORS preflight
       // that Apps Script's doPost doesn't handle. Body is still JSON text.

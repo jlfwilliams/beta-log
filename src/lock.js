@@ -1,4 +1,3 @@
-/* ---------- Access lock ---------- */
 // This is a basic deterrent for a personal static site, not real security —
 // the hash below is visible to anyone who views source. It just stops casual
 // visitors from opening the app or hitting your Apps Script endpoint.

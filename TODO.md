@@ -2,7 +2,7 @@
 - review code
 - combine app script calls into one
 - add short lived cache for plan and goal data
-- research stael-while-revalidate
+- research stale-while-revalidate
 - create build script githook to generate a bundle on commit from src pkgs
 - fix color coding for range values in plan
 

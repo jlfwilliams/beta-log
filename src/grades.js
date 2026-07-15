@@ -1,4 +1,3 @@
-/* ---------- Grade table (Sport leading, YDS) ---------- */
 const GRADES = (() => {
   const list = ['5.6','5.7','5.8','5.9'];
   const letters = ['a','b','c','d'];
