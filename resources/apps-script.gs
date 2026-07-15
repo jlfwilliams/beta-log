@@ -99,15 +99,30 @@ function readPlanRows_() {
 
 function doGet(e) {
   const type = e && e.parameter && e.parameter.type;
+
+  // Kept as single-purpose endpoints for anyone hitting the URL directly /
+  // debugging, but the client no longer calls these individually — it uses
+  // the combined branch below so a full data refresh costs one round trip
+  // instead of two or three.
   if (type === 'goals') {
-    const data = readSheetAsObjects_(getGoalsSheet_());
-    return jsonOut_({ ok: true, data });
+    return jsonOut_({ ok: true, data: readSheetAsObjects_(getGoalsSheet_()) });
   }
   if (type === 'plan') {
     return jsonOut_({ ok: true, data: readPlanRows_() });
   }
-  const data = readSheetAsObjects_(getSheet_());
-  return jsonOut_({ ok: true, data });
+  if (type === 'log') {
+    return jsonOut_({ ok: true, data: readSheetAsObjects_(getSheet_()) });
+  }
+
+  // Default (no type param, or type=all): everything the app needs in one
+  // response. Dashboard needs log+goal, Plan needs plan+goal — this covers
+  // both (and the whole app on initial load) with a single Apps Script call.
+  return jsonOut_({
+    ok: true,
+    log: readSheetAsObjects_(getSheet_()),
+    goal: readSheetAsObjects_(getGoalsSheet_()),
+    plan: readPlanRows_()
+  });
 }
 
 function doPost(e) {

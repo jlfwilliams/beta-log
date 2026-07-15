@@ -14,10 +14,20 @@ function formatDateNoYear(dateStr){
 }
 
 async function renderPlan(){
-  Promise.all([
-  plan = await Store.fetchPlan(),
-  goal = await Store.fetchGoal()
-  ])
+  // Same cached, single-round-trip read path as the Dashboard: instant paint
+  // from cache (stale or fresh), with a quiet re-render if a background
+  // refresh brings back newer data.
+  const data = await Store.getData((fresh) => {
+    plan = fresh.plan;
+    goal = fresh.goal;
+    renderPlanView();
+  });
+  plan = data.plan;
+  goal = data.goal;
+  renderPlanView();
+}
+
+function renderPlanView(){
   const sorted = [...plan]
     .filter(row => row.date && !isNaN(new Date(row.date)))
     .sort((a,b)=> new Date(a.date) - new Date(b.date));

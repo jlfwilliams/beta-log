@@ -13,10 +13,17 @@ document.querySelectorAll('#dashboard-climber-toggle button').forEach(btn => {
 });
 
 async function renderDashboard() {
-  Promise.all([
-    dashboardRows = await Store.fetchAll(),
-    dashboardGoal = await Store.fetchGoal()
-  ])
+  // Store.getData() resolves instantly from cache when available (stale or
+  // fresh) and only hits Apps Script when there's nothing cached yet. If the
+  // cache was stale, onUpdate fires later with fresh data and we quietly
+  // re-render — no loading state needed either way.
+  const data = await Store.getData((fresh) => {
+    dashboardRows = fresh.log;
+    dashboardGoal = fresh.goal;
+    applyDashboardFilter();
+  });
+  dashboardRows = data.log;
+  dashboardGoal = data.goal;
   applyDashboardFilter();
 }
 
