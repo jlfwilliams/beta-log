@@ -51,34 +51,161 @@ const Store = {
     };
   },
 
-  // The one network call the whole app needs: log + goal + plan in a single
-  // round trip, instead of a separate fetch per view.
-  async fetchCombinedRaw(){
-    const res = await fetch(APPS_SCRIPT_URL + '?type=all', { method:'GET' });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'Combined fetch failed');
-    return { log: json.log || [], goal: json.goal || [], plan: json.plan || [] };
+  // --- gviz reads -----------------------------------------------------
+  // Reads (log/goal/plan) go straight to Google's public gviz endpoint
+  // instead of through Apps Script. There's no script execution involved —
+  // Google serves the sheet data directly — so there's no cold start to pay.
+  // Writes (Store.add, below) still go through Apps Script's doPost, since
+  // gviz is read-only.
+  //
+  // Requires the sheet to be shared as "Anyone with the link -> Viewer".
+
+  gvizCallbackCounter: 0,
+
+  // gviz encodes date cells as the string "Date(year,month,day)" (month is
+  // 0-indexed) rather than a plain value. `pattern` matches what the rest of
+  // the app expects per tab (log dates were historically MM/dd/yyyy, plan
+  // dates yyyy-MM-dd).
+  gvizCellToDateStr(v, pattern){
+    if (v === null || v === undefined || v === '') return '';
+    const s = String(v);
+    const m = /^Date\((\d+),(\d+),(\d+)/.exec(s);
+    if (!m) return s;
+    const year = m[1];
+    const month = String(Number(m[2]) + 1).padStart(2, '0');
+    const day = String(m[3]).padStart(2, '0');
+    return pattern === 'MM/dd/yyyy' ? `${month}/${day}/${year}` : `${year}-${month}-${day}`;
   },
 
-  async fetchAndCache(){
-    try {
-      const fresh = await this.fetchCombinedRaw();
-      this.setCache(fresh);
-      return this.formatCombined(fresh);
-    } catch(e){
-      console.warn('Combined fetch failed, falling back to local log only.', e);
-      return {
-        log: this.getLocal().map(r => ({ ...r, gradeValue: gradeIndex(r.grade) })),
-        goal: null,
-        plan: []
+  // gviz doesn't set Access-Control-Allow-Origin, so a plain fetch() gets
+  // blocked by CORS regardless of what origin the app is served from (this
+  // would fail the same way on GitHub Pages, not just locally over file://).
+  // The endpoint is built for JSONP instead: load it via a <script> tag with
+  // a responseHandler callback name, and it invokes that global function
+  // directly with the parsed data — script tags aren't subject to CORS.
+  fetchGvizRows(sheetName){
+    return new Promise((resolve, reject) => {
+      if (!SHEET_ID || SHEET_ID === 'PASTE_YOUR_SHEET_ID_HERE') {
+        reject(new Error('SHEET_ID not configured in config.js'));
+        return;
+      }
+
+      const callbackName = `__betalog_gviz_${Date.now()}_${this.gvizCallbackCounter++}`;
+      const script = document.createElement('script');
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error(`Timed out loading gviz data for "${sheetName}" tab.`));
+      }, 10000);
+
+      const cleanup = () => {
+        clearTimeout(timeout);
+        delete window[callbackName];
+        script.remove();
       };
-    }
+
+      window[callbackName] = (json) => {
+        cleanup();
+        if (json.status === 'error') {
+          const detail = (json.errors && json.errors[0] && json.errors[0].detailed_message) || 'unknown gviz error';
+          reject(new Error(`gviz error reading "${sheetName}" tab: ${detail}`));
+          return;
+        }
+        // Each row's cells come through as { v: value, f: formattedValue },
+        // or null for a blank cell — flatten to a plain array of raw values.
+        const rows = (json.table.rows || [])
+          .map(row => row.c.map(cell => (cell ? cell.v : null)))
+          .filter(cells => cells.some(c => c !== null && c !== ''));
+        resolve(rows);
+      };
+
+      script.onerror = () => {
+        cleanup();
+        reject(new Error(`Failed to load gviz data for "${sheetName}" tab — check SHEET_ID and sharing settings.`));
+      };
+
+      // tqx sub-options are semicolon-separated within the single param.
+      script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&headers=1&sheet=${encodeURIComponent(sheetName)}`;
+      document.head.appendChild(script);
+    });
+  },
+
+  // The one network round trip (three parallel requests, but no shared
+  // server execution to wait on) the whole app needs: log + goal + plan,
+  // read directly off the sheet.
+  async fetchCombinedRaw(){
+    const [logRows, goalRows, planRows] = await Promise.all([
+      this.fetchGvizRows('log'),
+      this.fetchGvizRows('goals'),
+      this.fetchGvizRows('plan')
+    ]);
+
+    return {
+      // Column order matches the sheet headers: Timestamp, Date, Grade, Status, Climber.
+      log: logRows.map(c => ({
+        date: this.gvizCellToDateStr(c[1], 'MM/dd/yyyy'),
+        grade: c[2] || '',
+        status: c[3] || '',
+        climber: c[4] || ''
+      })),
+      // Column order: Grade.
+      goal: goalRows.map(c => ({ grade: c[0] || '' })),
+      // Column order: Week, Date, Climb 1, Climb 2, Climb 3, Climb 4, First Climber.
+      plan: planRows.map(c => ({
+        week: Number(c[0]),
+        date: this.gvizCellToDateStr(c[1], 'yyyy-MM-dd'),
+        climb1: c[2] || '',
+        climb2: c[3] || '',
+        climb3: c[4] || '',
+        climb4: c[5] || '',
+        firstClimber: c[6] || ''
+      }))
+    };
+  },
+
+  // Dedupes concurrent callers onto a single in-flight network call — this is
+  // what lets prefetch() (fired from the lock screen) and the later getData()
+  // call (fired on unlock) share one request instead of two, and generally
+  // protects against double-fetching if multiple views ask for data at once.
+  _inflight: null,
+
+  async fetchAndCache(){
+    if (this._inflight) return this._inflight;
+    this._inflight = (async () => {
+      try {
+        const fresh = await this.fetchCombinedRaw();
+        this.setCache(fresh);
+        return this.formatCombined(fresh);
+      } catch(e){
+        console.warn('Combined fetch failed, falling back to local log only.', e);
+        return {
+          log: this.getLocal().map(r => ({ ...r, gradeValue: gradeIndex(r.grade) })),
+          goal: null,
+          plan: []
+        };
+      } finally {
+        this._inflight = null;
+      }
+    })();
+    return this._inflight;
   },
 
   // Fire the refresh but don't make the caller wait on it — used for the
   // "stale-while-revalidate" path below.
   refreshInBackground(onUpdate){
     this.fetchAndCache().then(data => { if (onUpdate) onUpdate(data); });
+  },
+
+  // Kick the combined fetch off as early as possible — call this from the
+  // lock screen, before the passphrase is even submitted, so by the time
+  // renderDashboard() calls getData() the data may already be in hand.
+  // Now that reads go through gviz instead of Apps Script there's no cold
+  // start to hide, but this still shaves the full round trip (however short)
+  // off the perceived wait after unlocking (fetchAndCache's dedupe means it
+  // joins this same in-flight request either way — no double fetch).
+  prefetch(){
+    const cache = this.getCache();
+    if (cache && this.isCacheFresh(cache)) return; // already fresh, nothing to warm
+    this.fetchAndCache().catch(()=>{});
   },
 
   // Main read path for the whole app. Resolves as fast as possible:
