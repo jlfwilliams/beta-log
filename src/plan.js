@@ -1,5 +1,8 @@
-/* ---------- Plan ---------- */
 const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+let plan = [];
+let goal = null;
+
 function formatDateNoYear(dateStr){
   // Plan dates come in as yyyy-MM-dd; parse the parts directly rather than via
   // `new Date()` so this can't drift a day from a timezone offset.
@@ -11,8 +14,10 @@ function formatDateNoYear(dateStr){
 }
 
 async function renderPlan(){
-  const plan = await Store.fetchPlan();
-  const goal = await Store.fetchGoal();
+  Promise.all([
+  plan = await Store.fetchPlan(),
+  goal = await Store.fetchGoal()
+  ])
   const sorted = [...plan]
     .filter(row => row.date && !isNaN(new Date(row.date)))
     .sort((a,b)=> new Date(a.date) - new Date(b.date));

@@ -1,25 +1,26 @@
-/* ---------- Dashboard ---------- */
 let progressChart = null;
 let dashboardRows = [];
 let dashboardGoal = null;
 let dashboardClimberFilter = 'All';
 
-document.querySelectorAll('#dashboard-climber-toggle button').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('#dashboard-climber-toggle button').forEach(b=>b.classList.remove('selected'));
+document.querySelectorAll('#dashboard-climber-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#dashboard-climber-toggle button').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     dashboardClimberFilter = btn.dataset.climber;
     applyDashboardFilter();
   });
 });
 
-async function renderDashboard(){
-  dashboardRows = await Store.fetchAll();
-  dashboardGoal = await Store.fetchGoal();
+async function renderDashboard() {
+  Promise.all([
+    dashboardRows = await Store.fetchAll(),
+    dashboardGoal = await Store.fetchGoal()
+  ])
   applyDashboardFilter();
 }
 
-function applyDashboardFilter(){
+function applyDashboardFilter() {
   const rows = dashboardClimberFilter === 'All'
     ? dashboardRows
     : dashboardRows.filter(r => r.climber === dashboardClimberFilter);
@@ -34,22 +35,22 @@ function applyDashboardFilter(){
 
   // Each panel is rendered independently — if one throws (e.g. the Chart.js
   // CDN script failed to load), it must not prevent the others from rendering.
-  try { renderPyramid(rows, dashboardGoal); } catch(e){ console.error('Grade pyramid failed to render.', e); }
-  try { renderProgressChart(rows); } catch(e){ console.error('Progress chart failed to render.', e); }
-  try { renderRecentTable(rows); } catch(e){ console.error('Recent sessions failed to render.', e); }
+  try { renderPyramid(rows, dashboardGoal); } catch (e) { console.error('Grade pyramid failed to render.', e); }
+  try { renderProgressChart(rows); } catch (e) { console.error('Progress chart failed to render.', e); }
+  try { renderRecentTable(rows); } catch (e) { console.error('Recent sessions failed to render.', e); }
 }
 
-function renderPyramid(rows, goal){
+function renderPyramid(rows, goal) {
   const filtered = rows.filter(r => r.status === 'Send' || r.status === 'Redpoint');
 
   const container = document.getElementById('pyramid-container');
-  if (!filtered.length){
+  if (!filtered.length) {
     container.innerHTML = '<div class="pyramid-empty">No sends logged yet. Log a climb to start building your pyramid.</div>';
     return;
   }
   const counts = {};
-  filtered.forEach(r => { counts[r.grade] = (counts[r.grade]||0) + 1; });
-  const gradesPresent = Object.keys(counts).sort((a,b)=> gradeIndex(b) - gradeIndex(a));
+  filtered.forEach(r => { counts[r.grade] = (counts[r.grade] || 0) + 1; });
+  const gradesPresent = Object.keys(counts).sort((a, b) => gradeIndex(b) - gradeIndex(a));
   const maxCount = Math.max(...Object.values(counts));
 
   container.innerHTML = gradesPresent.map(g => {
@@ -70,7 +71,7 @@ function renderPyramid(rows, goal){
   }).join('');
 }
 
-function renderProgressChart(rows){
+function renderProgressChart(rows) {
   const canvasEl = document.getElementById('progress-chart');
   const fallback = document.getElementById('progress-chart-fallback');
 
@@ -95,8 +96,8 @@ function renderProgressChart(rows){
     if (isNaN(d)) return;
     const weekStart = new Date(d);
     weekStart.setDate(d.getDate() - d.getDay());
-    const key = weekStart.toISOString().slice(0,10);
-    if (!byWeek[key] || r.gradeValue > byWeek[key].value){
+    const key = weekStart.toISOString().slice(0, 10);
+    if (!byWeek[key] || r.gradeValue > byWeek[key].value) {
       byWeek[key] = { value: r.gradeValue, label: r.grade };
     }
   });
@@ -120,7 +121,7 @@ function renderProgressChart(rows){
     },
     options: {
       plugins: {
-        legend: { display:false },
+        legend: { display: false },
         tooltip: {
           callbacks: {
             label: (ctx) => byWeek[weeks[ctx.dataIndex]].label
@@ -128,28 +129,28 @@ function renderProgressChart(rows){
         }
       },
       scales: {
-        x: { ticks: { color:'#8A857D' }, grid:{ color:'#2B282C' } },
+        x: { ticks: { color: '#8A857D' }, grid: { color: '#2B282C' } },
         y: {
           min: 0,
           max: GRADES.length - 1,
           ticks: {
             stepSize: 1,
-            color:'#8A857D',
+            color: '#8A857D',
             // Show the actual YDS grade at each gridline instead of a raw
             // index or percentage.
             callback: (value) => GRADES[value] || ''
           },
-          grid:{ color:'#2B282C' },
-          title:{ display:true, text:'Grade', color:'#8A857D' }
+          grid: { color: '#2B282C' },
+          title: { display: true, text: 'Grade', color: '#8A857D' }
         }
       }
     }
   });
 }
 
-function renderRecentTable(rows){
+function renderRecentTable(rows) {
   const toTime = (r) => { const t = new Date(r.date).getTime(); return isNaN(t) ? -Infinity : t; };
-  const sorted = [...rows].sort((a,b)=> toTime(b) - toTime(a)).slice(0,10);
+  const sorted = [...rows].sort((a, b) => toTime(b) - toTime(a)).slice(0, 10);
   const body = document.getElementById('recent-table-body');
   body.innerHTML = sorted.map(r => `
     <tr>
