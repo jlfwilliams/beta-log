@@ -7,3 +7,4 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: pwd
+      - run: ls -la
