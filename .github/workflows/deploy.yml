@@ -23,7 +23,7 @@ jobs:
 
       - name: Build
         env:
-          SHEETS_GVIZ_URL: ${{ secrets.GVIZ_SHEET_ID }}
+          GVIZ_SHEET_ID: ${{ secrets.GVIZ_SHEET_ID }}
           APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
         run: |
           chmod +x scripts/build.sh
