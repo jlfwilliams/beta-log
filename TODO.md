@@ -1,12 +1,18 @@
 # Issues
+- fix dates displaying weird in the recent sessions list
+    - make recent sessions scrollable
+    - fix colors on recent sessions
 - review code
 - create build script githook to generate a bundle on commit from src pkgs
 - fix color coding for range values in plan
-- fix colors on recent sessions
-- fix dates displaying weird in the recent sessions list
+- increase vertical size of PROGRESS OVER TIME dashboard panel on smaller screen sizes
+
 
 # Features
+- add a running log, sorted by timestamp, to the log tab
+- ability to edit log entries
 - "feeling strong" button for adding one more climb to plan
 - display goal somewhere prominent
 - improve the pyramid graph
 - figure out how to dynamically adjust plan based on performance
+- inspirational quotes on first page

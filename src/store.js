@@ -85,8 +85,8 @@ const Store = {
   // directly with the parsed data — script tags aren't subject to CORS.
   fetchGvizRows(sheetName){
     return new Promise((resolve, reject) => {
-      if (!SHEET_ID || SHEET_ID === 'PASTE_YOUR_SHEET_ID_HERE') {
-        reject(new Error('SHEET_ID not configured in config.js'));
+      if (!GVIZ_SHEET_ID) {
+        reject(new Error('GVIZ_SHEET_ID not configured in config.js'));
         return;
       }
 
@@ -120,11 +120,11 @@ const Store = {
 
       script.onerror = () => {
         cleanup();
-        reject(new Error(`Failed to load gviz data for "${sheetName}" tab — check SHEET_ID and sharing settings.`));
+        reject(new Error(`Failed to load gviz data for "${sheetName}" tab — check GVIZ_SHEET_ID and sharing settings.`));
       };
 
       // tqx sub-options are semicolon-separated within the single param.
-      script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&headers=1&sheet=${encodeURIComponent(sheetName)}`;
+      script.src = `https://docs.google.com/spreadsheets/d/${GVIZ_SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&headers=1&sheet=${encodeURIComponent(sheetName)}`;
       document.head.appendChild(script);
     });
   },
