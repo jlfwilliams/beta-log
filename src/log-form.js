@@ -1,6 +1,12 @@
 const gradeSel = document.getElementById('f-grade');
 populateGradeSelect(gradeSel);
-document.getElementById('f-date').valueAsDate = new Date();
+// Not using `valueAsDate = new Date()` here — its setter treats the Date as
+// a UTC instant, so anywhere behind UTC (all of the US) this can default to
+// tomorrow once past UTC midnight locally. Build the local yyyy-MM-dd string
+// by hand instead, matching the ISO format the rest of the app now uses.
+const today = new Date();
+const localIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+document.getElementById('f-date').value = localIso;
 
 let selectedStatus = 'Send';
 document.querySelectorAll('#status-toggle button').forEach(btn=>{

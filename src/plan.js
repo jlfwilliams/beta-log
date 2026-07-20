@@ -3,6 +3,18 @@ const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct',
 let plan = [];
 let goal = null;
 
+// Dates are plain yyyy-MM-dd strings. `new Date(dateStr)` parses that as UTC
+// midnight, which in any timezone behind UTC (all of the US) lands on the
+// *previous* local day — so any `<= today` comparison built on it can flip
+// a week over a day early. Parsing the parts directly and building the Date
+// with the local constructor avoids that shift entirely. Used for anything
+// that compares or orders dates; formatDateNoYear below stays string-only
+// since it's display-only and never needs a real Date object.
+function parseLocalDate(dateStr){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr || '');
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(NaN);
+}
+
 function formatDateNoYear(dateStr){
   // Plan dates come in as yyyy-MM-dd; parse the parts directly rather than via
   // `new Date()` so this can't drift a day from a timezone offset.
@@ -29,8 +41,8 @@ async function renderPlan(){
 
 function renderPlanView(){
   const sorted = [...plan]
-    .filter(row => row.date && !isNaN(new Date(row.date)))
-    .sort((a,b)=> new Date(a.date) - new Date(b.date));
+    .filter(row => row.date && !isNaN(parseLocalDate(row.date)))
+    .sort((a,b)=> parseLocalDate(a.date) - parseLocalDate(b.date));
 
   const today = new Date();
   today.setHours(0,0,0,0);
@@ -39,8 +51,7 @@ function renderPlanView(){
   // passed (or is today) — i.e. the last row we haven't walked past yet.
   let current = null;
   for (const row of sorted) {
-    const d = new Date(row.date);
-    d.setHours(0,0,0,0);
+    const d = parseLocalDate(row.date);
     if (d <= today) current = row;
     else break;
   }

@@ -63,10 +63,10 @@ const Store = {
   gvizCallbackCounter: 0,
 
   // gviz encodes date cells as the string "Date(year,month,day)" (month is
-  // 0-indexed) rather than a plain value. `pattern` matches what the rest of
-  // the app expects per tab (log dates were historically MM/dd/yyyy, plan
-  // dates yyyy-MM-dd).
-  gvizCellToDateStr(v, pattern){
+  // 0-indexed) rather than a plain value. Both log and plan now use the same
+  // internal canonical format, yyyy-MM-dd — display-specific formatting (e.g.
+  // month/day only in the recent sessions panel) happens at render time.
+  gvizCellToDateStr(v){
     if (v === null || v === undefined || v === '') return '';
     const s = String(v);
     const m = /^Date\((\d+),(\d+),(\d+)/.exec(s);
@@ -74,7 +74,7 @@ const Store = {
     const year = m[1];
     const month = String(Number(m[2]) + 1).padStart(2, '0');
     const day = String(m[3]).padStart(2, '0');
-    return pattern === 'MM/dd/yyyy' ? `${month}/${day}/${year}` : `${year}-${month}-${day}`;
+    return `${year}-${month}-${day}`;
   },
 
   // gviz doesn't set Access-Control-Allow-Origin, so a plain fetch() gets
@@ -142,7 +142,7 @@ const Store = {
     return {
       // Column order matches the sheet headers: Timestamp, Date, Grade, Status, Climber.
       log: logRows.map(c => ({
-        date: this.gvizCellToDateStr(c[1], 'MM/dd/yyyy'),
+        date: this.gvizCellToDateStr(c[1]),
         grade: c[2] || '',
         status: c[3] || '',
         climber: c[4] || ''
@@ -152,7 +152,7 @@ const Store = {
       // Column order: Week, Date, Climb 1, Climb 2, Climb 3, Climb 4, First Climber.
       plan: planRows.map(c => ({
         week: Number(c[0]),
-        date: this.gvizCellToDateStr(c[1], 'yyyy-MM-dd'),
+        date: this.gvizCellToDateStr(c[1]),
         climb1: c[2] || '',
         climb2: c[3] || '',
         climb3: c[4] || '',

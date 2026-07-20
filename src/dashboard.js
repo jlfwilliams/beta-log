@@ -78,6 +78,20 @@ function renderPyramid(rows, goal) {
   }).join('');
 }
 
+// Same UTC-midnight parsing trap as elsewhere: `new Date(dateStr)` on a plain
+// yyyy-MM-dd string reads it as UTC midnight, landing a day early once
+// converted to a US local time. Parse the parts directly instead.
+function parseLocalDate(dateStr){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr || '');
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(NaN);
+}
+
+// toISOString() converts back through UTC, which would reintroduce the same
+// shift on the way out — so this builds the yyyy-MM-dd key from local fields.
+function toIsoLocal(d){
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function renderProgressChart(rows) {
   const canvasEl = document.getElementById('progress-chart');
   const fallback = document.getElementById('progress-chart-fallback');
@@ -99,11 +113,11 @@ function renderProgressChart(rows) {
   const byWeek = {};
   sends.forEach(r => {
     if (!r.date) return;
-    const d = new Date(r.date);
+    const d = parseLocalDate(r.date);
     if (isNaN(d)) return;
     const weekStart = new Date(d);
     weekStart.setDate(d.getDate() - d.getDay());
-    const key = weekStart.toISOString().slice(0, 10);
+    const key = toIsoLocal(weekStart);
     if (!byWeek[key] || r.gradeValue > byWeek[key].value) {
       byWeek[key] = { value: r.gradeValue, label: r.grade };
     }
@@ -155,13 +169,26 @@ function renderProgressChart(rows) {
   });
 }
 
+// Dates are stored as plain yyyy-MM-dd strings with no time component.
+// Parsing them with `new Date()` reads them as UTC midnight, which can
+// shift the displayed day backward a full day in US timezones — so this
+// formats straight off the string instead of going through a Date object.
+function formatMonthDay(dateStr) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr || '');
+  return m ? `${m[2]}/${m[3]}` : (dateStr || '—');
+}
+
 function renderRecentTable(rows) {
-  const toTime = (r) => { const t = new Date(r.date).getTime(); return isNaN(t) ? -Infinity : t; };
+  // Sorting still needs real chronological order, not just string order.
+  // A constant UTC-vs-local shift wouldn't actually break sort order on its
+  // own, but parseLocalDate is used here anyway to keep every date
+  // comparison in this file going through the same, correct path.
+  const toTime = (r) => { const t = parseLocalDate(r.date).getTime(); return isNaN(t) ? -Infinity : t; };
   const sorted = [...rows].sort((a, b) => toTime(b) - toTime(a)).slice(0, 10);
   const body = document.getElementById('recent-table-body');
   body.innerHTML = sorted.map(r => `
     <tr>
-      <td class="mono">${r.date || '—'}</td>
+      <td class="mono">${formatMonthDay(r.date)}</td>
       <td><span class="grade-pill mono" style="background:${gradeColor(r.grade)}; color:#17161A;">${r.grade}</span></td>
       <td>${r.status}</td>
       <td>${r.climber || '—'}</td>
