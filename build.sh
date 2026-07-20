@@ -36,7 +36,7 @@ cat \
 
 echo "==> Injecting environment values (if provided)"
 if [ -n "${GVIZ_SHEET_ID:-}" ]; then
-  sed -i.bak "s|GVIZ_SHEET_ID|${GVIZ_SHEET_ID}|g" "$DIST_DIR/bundle.js"
+  sed -i.bak "s|__GVIZ_SHEET_ID__|${GVIZ_SHEET_ID}|g" "$DIST_DIR/bundle.js"
   rm -f "$DIST_DIR/bundle.js.bak"
   echo "    GVIZ_SHEET_ID injected"
 else
