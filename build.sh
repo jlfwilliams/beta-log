@@ -2,16 +2,6 @@
 set -euo pipefail
 
 # Beta Log build script
-#
-# Usage:
-#   ./scripts/build.sh
-#       -> local build. Placeholders are left in bundle.js untouched, so the
-#          dev fallback in config.js (the `.startsWith("__")` check) kicks in.
-#
-#   SHEETS_GVIZ_URL="https://..." APPS_SCRIPT_URL="https://..." ./scripts/build.sh
-#       -> prod build. Placeholders get replaced with real values.
-#
-# Place this at: scripts/build.sh
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
@@ -20,7 +10,7 @@ DIST_DIR="dist"
 
 echo "==> Cleaning $DIST_DIR"
 rm -rf "$DIST_DIR"
-mkdir -p "$DIST_DIR"
+mkdir -p "$DIST_DIR"/resources
 
 pwd
 
@@ -28,8 +18,7 @@ echo "==> Copying static files"
 cp index.html "$DIST_DIR/"
 [ -d assets ] && cp -r assets "$DIST_DIR/" || true
 [ -d styles ] && cp -r styles "$DIST_DIR/" || true
-cp favicon*.png "$DIST_DIR/" 2>/dev/null || true
-cp favicon.ico "$DIST_DIR/" 2>/dev/null || true
+cp resources/* "$DIST_DIR"/resources/ 2>/dev/null || true
 
 echo "==> Bundling src/*.js in dependency order"
 cat \
