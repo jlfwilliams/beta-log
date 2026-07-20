@@ -6,12 +6,17 @@ const GRADES = (() => {
 })();
 
 function gradeIndex(grade){ return GRADES.indexOf(grade); }
+
 function gradeColor(grade){
-  const idx = GRADES.indexOf(grade);
-  const pct = idx / Math.max(GRADES.length-1,1);
-  const stops = ['#6FCF97','#C8FF4D','#FFD166','#FF8C42','#FF4B3E'];
-  const pos = Math.round(pct * (stops.length-1));
-  return stops[Math.max(0, Math.min(stops.length-1, pos))];
+  const bands = [
+    { test: g => g === '5.6' || g === '5.7' || g === '5.8' || g === '5.9', color: '#6FCF97' },
+    { test: g => g.startsWith('5.10'), color: '#C8FF4D' },
+    { test: g => g.startsWith('5.11'), color: '#FFD166' },
+    { test: g => g.startsWith('5.12'), color: '#FF8C42' },
+    { test: g => g.startsWith('5.13'), color: '#FF4B3E' },
+  ];
+  const band = bands.find(b => b.test(grade));
+  return band ? band.color : '#6FCF97';
 }
 
 function populateGradeSelect(sel){
