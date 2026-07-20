@@ -66,7 +66,11 @@ function renderPlanView(){
     currentBody.innerHTML = '';
   } else {
     currentSub.textContent = `Week ${current.week} · starts ${formatDateNoYear(current.date)}`;
-    const climbs = [current.climb1, current.climb2, current.climb3, current.climb4];
+    // gviz hands back letterless grades (5.6-5.9) as numbers, not strings,
+    // since they parse as plain decimals. Normalize to string here so
+    // gradeIndex/gradeColor always see the same shape as the GRADES array.
+    const climbs = [current.climb1, current.climb2, current.climb3, current.climb4]
+      .map(c => (c === null || c === undefined || c === '') ? '' : String(c));
     currentBody.innerHTML = `
       <div class="plan-climb-grid">
         ${climbs.map((g, i) => {
