@@ -26,8 +26,8 @@ jobs:
           GVIZ_SHEET_ID: ${{ vars.GVIZ_SHEET_ID }}
           APPS_SCRIPT_URL: ${{ vars.APPS_SCRIPT_URL }}
         run: |
-          chmod +x scripts/build.sh
-          ./scripts/build.sh
+          chmod +x build.sh
+          ./build.sh
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
