@@ -420,6 +420,8 @@
       font-size: 13px;
       color: var(--tape-flash);
       min-height: 18px;
+      display: inline-block;
+      transition: opacity .5s ease;
     }
 
     /* Recent log table */
@@ -427,6 +429,17 @@
       width: 100%;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+    }
+
+    .table-scroll.tall {
+      max-height: 380px;
+      overflow-y: auto;
+    }
+
+    .table-scroll.tall thead th {
+      position: sticky;
+      top: 0;
+      background: var(--stone-900);
     }
 
     table.log-table {
@@ -829,6 +842,25 @@
               <span id="log-feedback"></span>
             </div>
           </form>
+        </div>
+
+        <div class="panel">
+          <h2>Full Log</h2>
+          <p class="panel-sub">Every entry from the log sheet, most recently logged first.</p>
+          <div class="table-scroll tall">
+            <table class="log-table">
+              <thead>
+                <tr>
+                  <th>Logged</th>
+                  <th>Date</th>
+                  <th>Grade</th>
+                  <th>Status</th>
+                  <th>Climber</th>
+                </tr>
+              </thead>
+              <tbody id="log-table-body"></tbody>
+            </table>
+          </div>
         </div>
       </section>
 

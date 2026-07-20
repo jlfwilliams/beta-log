@@ -26,6 +26,7 @@ const Store = {
 
   formatLog(rows){
     return (rows || []).map(r => ({
+      timestamp: r.timestamp,
       date: r.date,
       grade: r.grade,
       gradeValue: gradeIndex(r.grade),
@@ -75,6 +76,24 @@ const Store = {
     const month = String(Number(m[2]) + 1).padStart(2, '0');
     const day = String(m[3]).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  },
+
+  // The Timestamp column carries the actual write time (date + time), unlike
+  // the Date column which is a plain calendar date the climber picked. Used
+  // for sorting the log table by when entries were actually logged. Month is
+  // 0-indexed in both the gviz string and the Date() constructor, so it's
+  // passed straight through here (unlike gvizCellToDateStr above, which adds
+  // 1 back for display).
+  gvizCellToTimestampMs(v){
+    if (v === null || v === undefined || v === '') return null;
+    const s = String(v);
+    const m = /^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?/.exec(s);
+    if (!m) return null;
+    const [, year, month, day, hour, minute, second] = m;
+    return new Date(
+      Number(year), Number(month), Number(day),
+      Number(hour) || 0, Number(minute) || 0, Number(second) || 0
+    ).getTime();
   },
 
   // gviz doesn't set Access-Control-Allow-Origin, so a plain fetch() gets
@@ -142,6 +161,7 @@ const Store = {
     return {
       // Column order matches the sheet headers: Timestamp, Date, Grade, Status, Climber.
       log: logRows.map(c => ({
+        timestamp: this.gvizCellToTimestampMs(c[0]),
         date: this.gvizCellToDateStr(c[1]),
         grade: c[2] || '',
         status: c[3] || '',
@@ -256,7 +276,11 @@ const Store = {
       if (json.ok) {
         const cache = this.getCache();
         if (cache) {
-          cache.log = [...(cache.log || []), toSend];
+          // The sheet assigns the real Timestamp server-side on write, which
+          // this optimistic patch doesn't have yet — Date.now() is a stand-in
+          // that's accurate enough to sort correctly right away, and gets
+          // replaced with the true value on the next background refresh.
+          cache.log = [...(cache.log || []), { ...toSend, timestamp: Date.now() }];
           this.setCache(cache);
         }
       }
