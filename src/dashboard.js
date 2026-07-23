@@ -3,6 +3,8 @@ let dashboardRows = [];
 let dashboardGoal = null;
 let dashboardClimberFilter = 'All';
 
+const PYRAMID_MIN_GRADE = '5.10a';
+
 document.querySelectorAll('#dashboard-climber-toggle button').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('#dashboard-climber-toggle button').forEach(b => b.classList.remove('selected'));
@@ -27,18 +29,32 @@ async function renderDashboard() {
   applyDashboardFilter();
 }
 
+function sendsOnly(rows) {
+  return rows.filter(r => r.status === 'Send' || r.status === 'Redpoint');
+}
+
+function redpointsOnly(rows) {
+  return rows.filter(r => r.status === 'Redpoint');
+}
+
+function maxRedpoint(rows) {
+  return redpointsOnly(rows).reduce((best, r) => (!best || r.gradeValue > best.gradeValue) ? r : best, null);
+}
+
 function applyDashboardFilter() {
   const rows = dashboardClimberFilter === 'All'
     ? dashboardRows
     : dashboardRows.filter(r => r.climber === dashboardClimberFilter);
 
   document.getElementById('stat-total').textContent = rows.length;
-  const sends = rows.filter(r => r.status === 'Send' || r.status === 'Redpoint');
-  document.getElementById('stat-sends').textContent = sends.length;
-  document.getElementById('stat-rate').textContent = rows.length ? Math.round(sends.length / rows.length * 100) + '%' : '0%';
+  
+  const redpoints = redpointsOnly(rows);
+  document.getElementById('stat-sends').textContent = redpoints.length;
+  
+  document.getElementById('stat-rate').textContent = rows.length ? Math.round(redpoints.length / rows.length * 100) + '%' : '0%';
 
-  const maxSend = sends.reduce((best, r) => (!best || r.gradeValue > best.gradeValue) ? r : best, null);
-  document.getElementById('stat-max').textContent = maxSend ? maxSend.grade : '—';
+  const maxGrade = maxRedpoint(rows);
+  document.getElementById('stat-max').textContent = maxGrade ? maxGrade.grade : '—';
 
   // Each panel is rendered independently — if one throws (e.g. the Chart.js
   // CDN script failed to load), it must not prevent the others from rendering.
@@ -48,7 +64,8 @@ function applyDashboardFilter() {
 }
 
 function renderPyramid(rows, goal) {
-  const filtered = rows.filter(r => r.status === 'Send' || r.status === 'Redpoint');
+  const minIdx = gradeIndex(PYRAMID_MIN_GRADE);
+  const filtered = redpointsOnly(rows).filter(r => gradeIndex(r.grade) >= minIdx);
 
   const container = document.getElementById('pyramid-container');
   if (!filtered.length) {
@@ -109,9 +126,9 @@ function renderProgressChart(rows) {
   canvasEl.style.display = '';
   fallback.style.display = 'none';
 
-  const sends = rows.filter(r => (r.status === 'Send' || r.status === 'Redpoint') && r.date);
+  const redpoints = redpointsOnly(rows);
   const byWeek = {};
-  sends.forEach(r => {
+  redpoints.forEach(r => {
     if (!r.date) return;
     const d = parseLocalDate(r.date);
     if (isNaN(d)) return;
